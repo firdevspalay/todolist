@@ -1,15 +1,5 @@
 <?php
-namespace Symfony\Component\HttpFoundation {
-    if (!class_exists('Request', false)) {
-        class Request extends \Symfony\Component\HttpFoundation\Request {
-            public $attributes;
-            public $request;
-            public $query;
-            public $server;
-            public $files;
-        }
-    }
-}
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
