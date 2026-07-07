@@ -1,4 +1,4 @@
-FROM richarvey/nginx-php-fpm:3.1.7
+FROM richarvey/nginx-php-fpm:3.1.6
 WORKDIR /var/www/html
 COPY . .
 
