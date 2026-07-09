@@ -39,19 +39,18 @@
                         
                         <ul class="list-group">
                             @forelse($tasks as $task)
-                                <li class="list-group-item d-flex justify-content-between align-items-center {{ $task->is_completed ? 'bg-light' : '' }}">
-                                    
+                        <li class="list-group-item d-flex justify-content-between align-items-start gap-3 {{ $task->is_completed ? 'bg-light' : '' }}">                                    
                                     @if($task->is_completed)
-                                        <span class="text-decoration-line-through text-muted text-break">
+                                        <span class="text-decoration-line-through text-muted text-break flex-grow-1 pe-3">
                                             <i class="bi bi-check-circle-fill text-success me-2"></i>{{ $task->title }}
                                         </span>
                                     @else
-                                        <span class="text-break">
+                                        <span class="text-break flex-grow-1 pe-3">
                                             <i class="bi bi-circle text-muted me-2"></i>{{ $task->title }}
                                         </span>
                                     @endif
 
-                                    <div class="d-flex">
+                                    <div class="d-flex flex-shrink-0">
                                         <form action="{{ route('tasks.toggle', $task->id) }}" method="POST" class="me-1">
                                             @csrf
                                             @method('PATCH')
