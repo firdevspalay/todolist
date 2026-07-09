@@ -36,6 +36,24 @@ class TaskController extends Controller
         return redirect()->back();
     }
 
+   public function edit(Task $task)
+{
+    return view('edit', compact('task'));
+}
+
+public function update(Request $request, Task $task)
+{
+    $request->validate([
+        'title' => 'required|max:255',
+    ]);
+
+    $task->update([
+        'title' => $request->title,
+    ]);
+
+    return redirect()->route('tasks.index');
+}
+
     public function destroy(Task $task)
     {
         $task->delete();

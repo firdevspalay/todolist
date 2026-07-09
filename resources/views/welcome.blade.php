@@ -59,7 +59,9 @@
                                                 <i class="bi {{ $task->is_completed ? 'bi-arrow-counterclockwise' : 'bi-check-lg' }}"></i>
                                             </button>
                                         </form>
-
+                                        <a href="{{ route('tasks.edit', $task->id) }}" class="btn btn-sm btn-outline-warning me-1">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
                                         <form action="{{ route('tasks.destroy', $task->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
