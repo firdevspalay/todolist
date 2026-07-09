@@ -16,7 +16,7 @@ class TaskController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|max:255'
+        'title' => 'required'        
         ]);
 
         Task::create([
@@ -44,8 +44,8 @@ class TaskController extends Controller
 public function update(Request $request, Task $task)
 {
     $request->validate([
-        'title' => 'required|max:255',
-    ]);
+        'title' => 'required'   
+     ]);
 
     $task->update([
         'title' => $request->title,

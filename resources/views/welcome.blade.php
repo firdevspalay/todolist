@@ -42,11 +42,11 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center {{ $task->is_completed ? 'bg-light' : '' }}">
                                     
                                     @if($task->is_completed)
-                                        <span class="text-decoration-line-through text-muted">
+                                        <span class="text-decoration-line-through text-muted text-break">
                                             <i class="bi bi-check-circle-fill text-success me-2"></i>{{ $task->title }}
                                         </span>
                                     @else
-                                        <span>
+                                        <span class="text-break">
                                             <i class="bi bi-circle text-muted me-2"></i>{{ $task->title }}
                                         </span>
                                     @endif
