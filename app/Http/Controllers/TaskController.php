@@ -8,10 +8,13 @@ use Illuminate\Http\Request;
 class TaskController extends Controller
 {
     public function index()
-    {
-        $tasks = Task::latest()->get();
-        return view('welcome', compact('tasks'));
-    }
+{
+    $tasks = Task::where('user_id', auth()->id())
+                 ->latest()
+                 ->get();
+
+    return view('welcome', compact('tasks'));
+}
 
     public function store(Request $request)
     {
@@ -21,6 +24,7 @@ class TaskController extends Controller
 
         Task::create([
             'title' => $request->title,
+            'user_id' => auth()->id(),
             'is_completed' => false
         ]);
 
