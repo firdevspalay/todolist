@@ -12,6 +12,20 @@
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                     <span class="text-muted">
+                     Hoş geldin, <strong>{{ auth()->user()->name }}</strong>
+                    </span>
+
+                <form action="{{ route('logout') }}" method="POST">
+              @csrf
+
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-box-arrow-right me-1"></i>
+                Çıkış Yap
+                </button>
+            </form>
+        </div>
                 
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body text-center bg-primary text-white rounded">
