@@ -28,4 +28,9 @@ class User extends Authenticatable implements MustVerifyEmail{
             'password' => 'hashed',
         ];
     }
+
+    public function todoLists()
+{
+    return $this->hasMany(TodoList::class);
+}
 }
