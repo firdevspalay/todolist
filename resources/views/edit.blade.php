@@ -28,55 +28,61 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="mb-3">
-                            <label class="form-label">Görev</label>
+                    @if(auth()->user()->can('edit task title') || auth()->user()->hasRole('manager'))
+                    <div class="mb-3">
+                        <label class="form-label">Görev</label>
 
-                            <input
-                                type="text"
-                                name="title"
-                                value="{{ old('title', $task->title) }}"
-                                class="form-control"
-                                required
-                            >
-                        </div>
-                        <div class="mb-3">
-    <label class="form-label">Termin Tarihi</label>
+                        <input
+                            type="text"
+                            name="title"
+                            value="{{ old('title', $task->title) }}"
+                            class="form-control"
+                            required
+                        >
+                    </div>
+                    @endif
+                    @if(auth()->user()->can('change due date') || auth()->user()->hasRole('manager'))
+                    <div class="mb-3">
+                        <label class="form-label">Termin Tarihi</label>
 
-    <input
-        type="date"
-        name="due_date"
-        value="{{ old('due_date', $task->due_date) }}"
-        class="form-control"
-    >
-</div>
+                        <input
+                            type="date"
+                            name="due_date"
+                            value="{{ old('due_date', $task->due_date) }}"
+                            class="form-control"
+                        >
+                    </div>
+                    @endif
 
                         <div class="d-flex justify-content-between">
 
                             <a href="{{ route('tasks.index') }}" class="btn btn-secondary">
                                 Geri
                             </a>
+                            @role('manager')
                             <div class="mb-3">
-    <label for="assigned_to" class="form-label">
-        Atanacak Kişi
-    </label>
+                                <label for="assigned_to" class="form-label">
+                                    Atanacak Kişi
+                                </label>
 
-    <select
-        id="assigned_to"
-        name="assigned_to"
-        class="form-select"
-    >
-        <option value="">Kimse</option>
+                                <select
+                                    id="assigned_to"
+                                    name="assigned_to"
+                                    class="form-select"
+                                >
+                                    <option value="">Kimse</option>
 
-        @foreach($users as $user)
-            <option
-                value="{{ $user->id }}"
-                @selected(old('assigned_to', $task->assigned_to) == $user->id)
-            >
-                {{ $user->name }}
-            </option>
-        @endforeach
-    </select>
-</div>
+                                    @foreach($users as $user)
+                                        <option
+                                            value="{{ $user->id }}"
+                                            @selected(old('assigned_to', $task->assigned_to) == $user->id)
+                                        >
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endrole
 
                             <button type="submit" class="btn btn-warning">
                                 <i class="bi bi-check-lg me-1"></i>

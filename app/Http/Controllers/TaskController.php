@@ -7,6 +7,7 @@ use App\Models\Task;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\TaskAssignedNotification;
+use App\Notifications\TaskFeedbackNotification;
 use App\Notifications\TaskStatusChangedNotification;
 
 class TaskController extends Controller
@@ -107,17 +108,48 @@ if ($task->assignedUser) {
     return redirect()->back();
 }
 
-   public function edit(Task $task)
+public function edit(Task $task)
 {
-    $this->authorizeTaskOwner($task);
+    $isOwner =
+        $task->todoList
+        && (int) $task->todoList->user_id === (int) auth()->id();
+
+    $isAcceptedAssignee =
+        (int) $task->assigned_to === (int) auth()->id()
+        && $task->assignment_status === 'accepted';
+
+    $hasEditPermission =
+        auth()->user()->can('edit task title')
+        || auth()->user()->can('change due date');
+
+    abort_unless(
+        $isOwner || ($isAcceptedAssignee && $hasEditPermission),
+        403
+    );
 
     $users = User::orderBy('name')->get();
 
     return view('edit', compact('task', 'users'));
 }
+
 public function update(Request $request, Task $task)
 {
-    $this->authorizeTaskOwner($task);
+    $isOwner =
+        $task->todoList
+        && (int) $task->todoList->user_id === (int) auth()->id();
+
+    $isAcceptedAssignee =
+        (int) $task->assigned_to === (int) auth()->id()
+        && $task->assignment_status === 'accepted';
+
+    $hasEditPermission =
+        auth()->user()->can('edit task title')
+        || auth()->user()->can('change due date');
+
+    abort_unless(
+        $isOwner || ($isAcceptedAssignee && $hasEditPermission),
+        403
+    );
 
     $request->validate([
         'title' => 'required|max:255',
@@ -135,8 +167,13 @@ public function update(Request $request, Task $task)
         (int) $oldAssignedTo !== (int) $newAssignedTo;
 
     $task->update([
-        'title' => $request->title,
-        'due_date' => $request->due_date,
+        'title' => auth()->user()->can('edit task title')
+            ? $request->title
+            : $task->title,
+
+        'due_date' => auth()->user()->can('change due date')
+            ? $request->due_date
+            : $task->due_date,
         'assigned_to' => $newAssignedTo,
         'assigned_by' => $newAssignedTo ? auth()->id() : null,
         'assignment_status' => $assignmentChanged
@@ -194,6 +231,29 @@ public function reject(Task $task)
 }
 
     return redirect()->back();
+}
+
+public function sendFeedback(Request $request, Task $task)
+{
+    abort_unless(auth()->user()->can('send feedback'), 403);
+
+    $request->validate([
+        'feedback' => 'required|string|max:1000',
+    ]);
+
+    if ($task->assignedBy) {
+        $task->assignedBy->notify(
+            new TaskFeedbackNotification(
+                $task,
+                $request->feedback
+            )
+        );
+    }
+
+    return redirect()->back()->with(
+        'status',
+        'Geri bildirim başarıyla gönderildi.'
+    );
 }
 
 private function authorizeTaskOwner(Task $task): void

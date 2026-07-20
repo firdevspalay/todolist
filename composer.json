@@ -12,6 +12,7 @@
         "nyholm/psr7": "^1.8",
         "railsware/mailtrap-php": "^3.12",
         "resend/resend-php": "^1.5",
+        "spatie/laravel-permission": "^8.3",
         "symfony/http-client": "^7.4",
         "symfony/mailer": "^7.4"
     },

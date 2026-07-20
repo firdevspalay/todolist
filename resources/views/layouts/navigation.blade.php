@@ -15,6 +15,15 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @if(auth()->user()->hasRole('manager'))
+                        <x-nav-link
+                            :href="route('employees.index')"
+                            :active="request()->routeIs('employees.*')"
+                        >
+                            Çalışan Yönetimi
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -71,6 +80,14 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
         </div>
+        @if(auth()->user()->hasRole('manager'))
+            <x-responsive-nav-link
+                :href="route('employees.index')"
+                :active="request()->routeIs('employees.*')"
+            >
+                Çalışan Yönetimi
+            </x-responsive-nav-link>
+        @endif
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">

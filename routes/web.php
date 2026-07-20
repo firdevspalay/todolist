@@ -4,6 +4,7 @@ use App\Http\Controllers\TodoListController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EmployeeController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', [TaskController::class, 'index'])->name('tasks.index');
@@ -24,6 +25,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/tasks/{task}/reject', [TaskController::class, 'reject'])->name('tasks.reject');
     Route::patch('/notifications/read', function () {auth()->user()->unreadNotifications->markAsRead();
         return redirect()->back();})->name('notifications.read');
+    Route::post('/tasks/{task}/feedback', [TaskController::class, 'sendFeedback'])->name('tasks.feedback');
+    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+    Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
 });
 
 require __DIR__.'/auth.php';

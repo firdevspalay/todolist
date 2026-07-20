@@ -20,4 +20,5 @@ class TodoList extends Model
     {
         return $this->hasMany(Task::class);
     }
+   
 }

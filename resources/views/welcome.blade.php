@@ -32,6 +32,14 @@
     </span>
 
     <div class="d-flex align-items-center gap-2">
+        @if(auth()->user()->hasRole('manager'))
+            <a
+                href="{{ route('employees.index') }}"
+                class="btn btn-sm btn-primary"
+            >
+                Çalışan Yönetimi
+            </a>
+        @endif
 
         <div class="dropdown">
 
@@ -77,6 +85,17 @@
                         <small class="text-muted">
                             {{ $notification->data['title'] ?? '' }}
                         </small>
+                       @if(isset($notification->data['feedback']))
+                            <div class="mt-2 rounded bg-light p-2 border">
+                                <div class="fw-semibold text-dark mb-1">
+                                    💬 Geri Bildirim
+                                </div>
+
+                                <div class="small text-secondary">
+                                    "{{ $notification->data['feedback'] }}"
+                                </div>
+                            </div>
+                        @endif
                     </li>
 
                 @empty
@@ -264,6 +283,19 @@
                                 </small>
                             @endif
                         </div>
+                        <div class="d-flex gap-2">
+                            @if(
+                                auth()->user()->can('edit task title')
+                                || auth()->user()->can('change due date')
+                            )
+                                <a
+                                    href="{{ route('tasks.edit', $task->id) }}"
+                                    class="btn btn-sm btn-outline-warning"
+                                    title="Görevi düzenle"
+                                >
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            @endif
 
                         <form
                             action="{{ route('tasks.toggle', $task->id) }}"
@@ -280,8 +312,37 @@
                                 <i class="bi {{ $task->is_completed ? 'bi-arrow-counterclockwise' : 'bi-check-lg' }}"></i>
                             </button>
                         </form>
+                    </div>
 
                     </div>
+                    @can('send feedback')
+                        <form
+                            action="{{ route('tasks.feedback', $task->id) }}"
+                            method="POST"
+                            class="mt-3"
+                        >
+                            @csrf
+
+                            <div class="input-group">
+                                <input
+                                    type="text"
+                                    name="feedback"
+                                    class="form-control"
+                                    placeholder="Görev hakkında geri bildirim yazın..."
+                                    maxlength="1000"
+                                    required
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-outline-primary"
+                                >
+                                    <i class="bi bi-send me-1"></i>
+                                    Gönder
+                                </button>
+                            </div>
+                        </form>
+                    @endcan
                 </div>
             @endforeach
         </div>
