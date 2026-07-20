@@ -109,6 +109,13 @@
             </ul>
 
         </div>
+        <a
+            href="{{ route('profile.edit') }}"
+            class="btn btn-outline-secondary"
+        >
+            <i class="bi bi-person me-1"></i>
+            Profil
+        </a>
 
         <form action="{{ route('logout') }}" method="POST">
             @csrf
