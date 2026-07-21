@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\TaskAssignedNotification;
 use App\Notifications\TaskFeedbackNotification;
 use App\Notifications\TaskStatusChangedNotification;
+use App\Notifications\TaskUpdatedNotification;
 
 class TaskController extends Controller
 {
@@ -142,40 +143,69 @@ public function update(Request $request, Task $task)
         (int) $task->assigned_to === (int) auth()->id()
         && $task->assignment_status === 'accepted';
 
-    $hasEditPermission =
-        auth()->user()->can('edit task title')
+    $canEditTitle =
+        $isOwner
+        || auth()->user()->can('edit task title');
+
+    $canChangeDueDate =
+        $isOwner
         || auth()->user()->can('change due date');
 
     abort_unless(
-        $isOwner || ($isAcceptedAssignee && $hasEditPermission),
+        $isOwner
+        || (
+            $isAcceptedAssignee
+            && ($canEditTitle || $canChangeDueDate)
+        ),
         403
     );
 
-    $request->validate([
-        'title' => 'required|max:255',
-        'due_date' => 'nullable|date',
-        'assigned_to' => 'nullable|exists:users,id',
-    ]);
+    $rules = [];
+
+    if ($canEditTitle) {
+        $rules['title'] = ['required', 'string', 'max:255'];
+    }
+
+    if ($canChangeDueDate) {
+        $rules['due_date'] = ['nullable', 'date'];
+    }
+
+    if ($isOwner) {
+        $rules['assigned_to'] = ['nullable', 'exists:users,id'];
+    }
+
+    $validated = $request->validate($rules);
 
     $oldAssignedTo = $task->assigned_to;
-
-    $newAssignedTo = $request->filled('assigned_to')
-        ? (int) $request->assigned_to
-        : null;
+    $oldTitle = $task->title;
+    $oldDueDate = $task->due_date;
+    $newAssignedTo = $isOwner
+        ? (
+            $request->filled('assigned_to')
+                ? (int) $request->assigned_to
+                : null
+        )
+        : $task->assigned_to;
 
     $assignmentChanged =
-        (int) $oldAssignedTo !== (int) $newAssignedTo;
+        $isOwner
+        && (int) $oldAssignedTo !== (int) $newAssignedTo;
 
     $task->update([
-        'title' => auth()->user()->can('edit task title')
-            ? $request->title
+        'title' => $canEditTitle
+            ? $validated['title']
             : $task->title,
 
-        'due_date' => auth()->user()->can('change due date')
-            ? $request->due_date
+        'due_date' => $canChangeDueDate
+            ? ($validated['due_date'] ?? null)
             : $task->due_date,
+
         'assigned_to' => $newAssignedTo,
-        'assigned_by' => $newAssignedTo ? auth()->id() : null,
+
+        'assigned_by' => $assignmentChanged
+            ? ($newAssignedTo ? auth()->id() : null)
+            : $task->assigned_by,
+
         'assignment_status' => $assignmentChanged
             ? ($newAssignedTo ? 'pending' : 'accepted')
             : $task->assignment_status,
@@ -187,6 +217,27 @@ public function update(Request $request, Task $task)
         $task->assignedUser?->notify(
             new TaskAssignedNotification($task)
         );
+    }
+    $changes = [];
+
+    if ($canEditTitle && $oldTitle !== $task->title) {
+        $changes[] = 'the task title';
+    }
+
+    if ($canChangeDueDate && $oldDueDate != $task->due_date) {
+        $changes[] = 'the due date';
+    }
+
+    if (!$isOwner && !empty($changes)) {
+        User::role('manager')->each(function ($manager) use ($task, $changes) {
+            $manager->notify(
+                new TaskUpdatedNotification(
+                    $task,
+                    auth()->user(),
+                    $changes
+                )
+            );
+        });
     }
 
     return redirect()->route('tasks.index');
