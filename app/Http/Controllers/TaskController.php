@@ -206,6 +206,8 @@ public function update(Request $request, Task $task)
         $isOwner
         && (int) $oldAssignedTo !== (int) $newAssignedTo;
 
+        dd($validated, $canChangeDueDate, $task->due_date);
+
     $task->update([
         'title' => $canEditTitle
             ? ($validated['title'] ?? $task->title)
