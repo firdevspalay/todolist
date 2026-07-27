@@ -14,7 +14,8 @@ class TaskUpdatedNotification extends Notification
     public function __construct(
         public Task $task,
         public User $employee,
-        public array $changes
+        public array $changes,
+        public ?string $changeNote = null
     ) {}
 
     public function via(object $notifiable): array
@@ -36,7 +37,9 @@ class TaskUpdatedNotification extends Notification
 
         return [
             'task_id' => $this->task->id,
+            'employee' => $this->employee->name,
             'message' => $message,
+            'change_note' => $this->changeNote,
         ];
     }
 }

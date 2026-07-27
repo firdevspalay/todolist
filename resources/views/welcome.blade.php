@@ -18,6 +18,25 @@
 </head>
 
 <body class="bg-light">
+    @if (session('success'))
+        <div
+            id="success-toast"
+            class="position-fixed top-0 end-0 m-4 alert alert-success shadow"
+            style="z-index: 9999;"
+        >
+            {{ session('success') }}
+        </div>
+
+        <script>
+            setTimeout(() => {
+                const toast = document.getElementById('success-toast');
+
+                if (toast) {
+                    toast.remove();
+                }
+            }, 3000);
+        </script>
+    @endif
 
 <div class="container py-5">
     <div class="row justify-content-center">
@@ -78,8 +97,14 @@
 
                     <li class="px-3 py-2 border-bottom">
                         <strong>
-                            {{ $notification->data['assigned_by'] ?? $notification->data['user'] ?? 'Sistem' }}
-                        </strong><br>
+                            {{
+                                $notification->data['employee']
+                                ?? $notification->data['assigned_by']
+                                ?? $notification->data['user']
+                                ?? 'Sistem'
+                            }}
+                        </strong>
+                        <br>
                        {{ $notification->data['message'] ?? 'Yeni bir bildirim var.' }}<br>
 
                         <small class="text-muted">
@@ -93,6 +118,17 @@
 
                                 <div class="small text-secondary">
                                     "{{ $notification->data['feedback'] }}"
+                                </div>
+                            </div>
+                        @endif
+                        @if(!empty($notification->data['change_note']))
+                            <div class="mt-2 rounded bg-light p-2 border">
+                                <div class="fw-semibold text-dark mb-1">
+                                    📝 Değişiklik Notu
+                                </div>
+
+                                <div class="small text-secondary">
+                                    "{{ $notification->data['change_note'] }}"
                                 </div>
                             </div>
                         @endif

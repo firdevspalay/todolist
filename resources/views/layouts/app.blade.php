@@ -26,6 +26,24 @@
                     </div>
                 </header>
             @endisset
+            @if (session('success'))
+                <div
+                    id="success-toast"
+                    class="fixed top-5 right-5 z-50 max-w-sm rounded-lg bg-green-600 px-5 py-4 text-white shadow-lg"
+                >
+                    {{ session('success') }}
+                </div>
+
+                <script>
+                    setTimeout(() => {
+                        const toast = document.getElementById('success-toast');
+
+                        if (toast) {
+                            toast.remove();
+                        }
+                    }, 3000);
+                </script>
+            @endif
 
             <!-- Page Content -->
             <main>

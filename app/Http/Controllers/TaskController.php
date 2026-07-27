@@ -79,7 +79,12 @@ if ($task->assignedUser) {
         new TaskAssignedNotification($task)
     );
 }
-    return redirect()->back();
+    return redirect()->back()->with(
+        'success',
+        $task->assigned_to
+            ? 'Görev başarıyla atandı.'
+            : 'Görev başarıyla oluşturuldu.'
+    );
 }
 
    public function toggle(Task $task)
@@ -160,21 +165,31 @@ public function update(Request $request, Task $task)
         403
     );
 
-    $rules = [];
-
-    if ($canEditTitle) {
-        $rules['title'] = ['required', 'string', 'max:255'];
-    }
-
-    if ($canChangeDueDate) {
-        $rules['due_date'] = ['nullable', 'date'];
-    }
+   $rules = [];
 
     if ($isOwner) {
+
+        $rules['title'] = ['required', 'string', 'max:255'];
+        $rules['due_date'] = ['nullable', 'date'];
         $rules['assigned_to'] = ['nullable', 'exists:users,id'];
+
+    } else {
+
+        $rules['due_date'] = ['nullable', 'date'];
+
+        if ($request->due_date != $task->due_date) {
+            $rules['change_note'] = ['required', 'string', 'max:1000'];
+        }
+
     }
 
-    $validated = $request->validate($rules);
+    $validated = $request->validate(
+        $rules,
+        [
+            'change_note.required' =>
+                'Termin tarihini değiştirdiğinizde değişiklik notu girmeniz zorunludur.',
+        ]
+    );
 
     $oldAssignedTo = $task->assigned_to;
     $oldTitle = $task->title;
@@ -193,7 +208,7 @@ public function update(Request $request, Task $task)
 
     $task->update([
         'title' => $canEditTitle
-            ? $validated['title']
+            ? ($validated['title'] ?? $task->title)
             : $task->title,
 
         'due_date' => $canChangeDueDate
@@ -229,18 +244,24 @@ public function update(Request $request, Task $task)
     }
 
     if (!$isOwner && !empty($changes)) {
-        User::role('manager')->each(function ($manager) use ($task, $changes) {
+        $changeNote = $validated['change_note'] ?? null;
+
+        User::role('manager')->each(function ($manager) use ($task, $changes, $changeNote) {
             $manager->notify(
                 new TaskUpdatedNotification(
                     $task,
                     auth()->user(),
-                    $changes
+                    $changes,
+                    $changeNote
                 )
             );
         });
     }
 
-    return redirect()->route('tasks.index');
+    return redirect()->route('tasks.index')->with(
+        'success',
+        'Görev başarıyla güncellendi.'
+    );
 }
 
    public function destroy(Task $task)
@@ -249,7 +270,10 @@ public function update(Request $request, Task $task)
 
     $task->delete();
 
-    return redirect()->back();
+    return redirect()->back()->with(
+        'success',
+        'Görev başarıyla silindi.'
+    );
 }
 
    public function accept(Task $task)
@@ -265,7 +289,10 @@ public function update(Request $request, Task $task)
     );
 }
 
-    return redirect()->back();
+    return redirect()->back()->with(
+        'success',
+        'Görev kabul edildi.'
+    );
 }
 
 public function reject(Task $task)
@@ -281,7 +308,10 @@ public function reject(Task $task)
     );
 }
 
-    return redirect()->back();
+    return redirect()->back()->with(
+        'success',
+        'Görev reddedildi.'
+    );
 }
 
 public function sendFeedback(Request $request, Task $task)
@@ -302,7 +332,7 @@ public function sendFeedback(Request $request, Task $task)
     }
 
     return redirect()->back()->with(
-        'status',
+        'success',
         'Geri bildirim başarıyla gönderildi.'
     );
 }

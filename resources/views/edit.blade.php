@@ -3,11 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Görevi Düzenle</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet"
+    >
 </head>
+
 <body class="bg-light">
 
 <div class="container py-5">
@@ -24,42 +33,44 @@
 
                 <div class="card-body">
 
-                    <form action="{{ route('tasks.update', $task->id) }}" method="POST">
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            {{ $errors->first() }}
+                        </div>
+                    @endif
+
+                    <form
+                        action="{{ route('tasks.update', $task->id) }}"
+                        method="POST"
+                    >
                         @csrf
                         @method('PUT')
 
-                    @if(auth()->user()->can('edit task title') || auth()->user()->hasRole('manager'))
-                    <div class="mb-3">
-                        <label class="form-label">Görev</label>
+                        @role('manager')
 
-                        <input
-                            type="text"
-                            name="title"
-                            value="{{ old('title', $task->title) }}"
-                            class="form-control"
-                            required
-                        >
-                    </div>
-                    @endif
-                    @if(auth()->user()->can('change due date') || auth()->user()->hasRole('manager'))
-                    <div class="mb-3">
-                        <label class="form-label">Termin Tarihi</label>
+                            <div class="mb-3">
+                                <label class="form-label">Görev</label>
 
-                        <input
-                            type="date"
-                            name="due_date"
-                            value="{{ old('due_date', $task->due_date) }}"
-                            class="form-control"
-                        >
-                    </div>
-                    @endif
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value="{{ old('title', $task->title) }}"
+                                    class="form-control"
+                                    required
+                                >
+                            </div>
 
-                        <div class="d-flex justify-content-between">
+                            <div class="mb-3">
+                                <label class="form-label">Termin Tarihi</label>
 
-                            <a href="{{ route('tasks.index') }}" class="btn btn-secondary">
-                                Geri
-                            </a>
-                            @role('manager')
+                                <input
+                                    type="date"
+                                    name="due_date"
+                                    value="{{ old('due_date', $task->due_date) }}"
+                                    class="form-control"
+                                >
+                            </div>
+
                             <div class="mb-3">
                                 <label for="assigned_to" class="form-label">
                                     Atanacak Kişi
@@ -75,20 +86,69 @@
                                     @foreach($users as $user)
                                         <option
                                             value="{{ $user->id }}"
-                                            @selected(old('assigned_to', $task->assigned_to) == $user->id)
+                                            @selected(
+                                                old('assigned_to', $task->assigned_to)
+                                                == $user->id
+                                            )
                                         >
                                             {{ $user->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                            @endrole
+
+                        @else
+
+                            <div class="mb-3">
+                                <label class="form-label">Görev</label>
+
+                                <input
+                                    type="text"
+                                    value="{{ $task->title }}"
+                                    class="form-control"
+                                    disabled
+                                >
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Termin Tarihi</label>
+
+                                <input
+                                    type="date"
+                                    name="due_date"
+                                    value="{{ old('due_date', $task->due_date) }}"
+                                    class="form-control"
+                                >
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="change_note" class="form-label">
+                                    Değişiklik Notu
+                                </label>
+
+                                <textarea
+                                    id="change_note"
+                                    name="change_note"
+                                    class="form-control"
+                                    rows="4"
+                                    placeholder="Termin tarihini değiştirme nedeninizi yazın..."
+                                >{{ old('change_note') }}</textarea>
+                            </div>
+
+                        @endrole
+
+                        <div class="d-flex justify-content-between">
+                            <a
+                                href="{{ route('tasks.index') }}"
+                                class="btn btn-secondary"
+                            >
+                                Geri
+                            </a>
 
                             <button type="submit" class="btn btn-warning">
                                 <i class="bi bi-check-lg me-1"></i>
                                 Kaydet
                             </button>
-
                         </div>
 
                     </form>
