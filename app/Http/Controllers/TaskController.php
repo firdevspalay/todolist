@@ -148,13 +148,12 @@ public function update(Request $request, Task $task)
         (int) $task->assigned_to === (int) auth()->id()
         && $task->assignment_status === 'accepted';
 
-    $canEditTitle =
-        $isOwner
-        || auth()->user()->can('edit task title');
+    $canEditTitle = $isOwner;
 
     $canChangeDueDate =
         $isOwner
-        || auth()->user()->can('change due date');
+        || $isAcceptedAssignee;
+
 
     abort_unless(
         $isOwner
@@ -205,8 +204,6 @@ public function update(Request $request, Task $task)
     $assignmentChanged =
         $isOwner
         && (int) $oldAssignedTo !== (int) $newAssignedTo;
-
-        dd($validated, $canChangeDueDate, $task->due_date);
 
     $task->update([
         'title' => $canEditTitle
