@@ -153,10 +153,12 @@
                                     </small>
                                 @endif
 
-                                <div class="mt-3 d-flex gap-2">
+                            <div class="mt-3">
+
                                     <form
                                         action="{{ route('tasks.accept', $task->id) }}"
                                         method="POST"
+                                        class="mb-3"
                                     >
                                         @csrf
                                         @method('PATCH')
@@ -173,7 +175,6 @@
                                     <form
                                         action="{{ route('tasks.reject', $task->id) }}"
                                         method="POST"
-                                        class="mt-2"
                                     >
                                         @csrf
                                         @method('PATCH')
@@ -186,7 +187,10 @@
                                             required
                                         ></textarea>
 
-                                        <button type="submit" class="btn btn-outline-danger">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-outline-danger btn-sm"
+                                        >
                                             <i class="bi bi-x-lg me-1"></i>
                                             Reddet
                                         </button>
@@ -715,6 +719,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    let lastNotificationCount =
+        Number.parseInt(badge.textContent.trim(), 10) || 0;
+
     async function refreshNotifications() {
         try {
             const response = await fetch(
@@ -731,21 +738,45 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             if (!response.ok) {
-                console.error('Bildirim isteği başarısız:', response.status);
+                console.error(
+                    'Bildirim isteği başarısız:',
+                    response.status
+                );
                 return;
             }
 
-            dropdown.innerHTML = await response.text();
+            const html = await response.text();
 
-            const notificationItems =
-                dropdown.querySelectorAll('[data-notification-item]');
+            const temporaryContainer = document.createElement('div');
+            temporaryContainer.innerHTML = html;
 
-            const count = notificationItems.length;
+            const newNotificationCount =
+                temporaryContainer.querySelectorAll(
+                    '[data-notification-item]'
+                ).length;
 
-            badge.textContent = count;
-            badge.classList.toggle('d-none', count === 0);
+            /*
+             * Yeni bildirim geldiğinde görevlerin durumu da değişmiş
+             * olabileceği için ana sayfayı yalnızca bir kez yeniler.
+             */
+            if (newNotificationCount !== lastNotificationCount) {
+                window.location.reload();
+                return;
+            }
+
+            dropdown.innerHTML = html;
+            badge.textContent = newNotificationCount;
+            badge.classList.toggle(
+                'd-none',
+                newNotificationCount === 0
+            );
+
+            lastNotificationCount = newNotificationCount;
         } catch (error) {
-            console.error('Bildirim yenileme hatası:', error);
+            console.error(
+                'Bildirim yenileme hatası:',
+                error
+            );
         }
     }
 
@@ -753,5 +784,5 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(refreshNotifications, 5000);
 });
 </script>
-</body>
+</body> 
 </html>
