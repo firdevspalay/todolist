@@ -68,79 +68,17 @@
             >
                 <i class="bi bi-bell"></i>
 
-                @if($notifications->count())
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{ $notifications->count() }}
-                    </span>
-                @endif
+                <span
+                    id="notificationCount"
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $notifications->count() ? '' : 'd-none' }}"
+                >
+                    {{ $notifications->count() }}
+                </span>
 
             </button>
 
-            <ul class="dropdown-menu dropdown-menu-end" style="width:320px;">
-                @if($notifications->count())
-    <li class="px-3 py-2 border-bottom text-end">
-        <form action="{{ route('notifications.read') }}" method="POST">
-            @csrf
-            @method('PATCH')
-
-            <button
-                type="submit"
-                class="btn btn-link btn-sm text-decoration-none p-0"
-            >
-                Tümünü okundu işaretle
-            </button>
-        </form>
-    </li>
-@endif
-
-                @forelse($notifications as $notification)
-
-                    <li class="px-3 py-2 border-bottom">
-                        <strong>
-                            {{
-                                $notification->data['employee']
-                                ?? $notification->data['assigned_by']
-                                ?? $notification->data['user']
-                                ?? 'Sistem'
-                            }}
-                        </strong>
-                        <br>
-                       {{ $notification->data['message'] ?? 'Yeni bir bildirim var.' }}<br>
-
-                        <small class="text-muted">
-                            {{ $notification->data['title'] ?? '' }}
-                        </small>
-                       @if(isset($notification->data['feedback']))
-                            <div class="mt-2 rounded bg-light p-2 border">
-                                <div class="fw-semibold text-dark mb-1">
-                                    💬 Geri Bildirim
-                                </div>
-
-                                <div class="small text-secondary">
-                                    "{{ $notification->data['feedback'] }}"
-                                </div>
-                            </div>
-                        @endif
-                        @if(!empty($notification->data['change_note']))
-                            <div class="mt-2 rounded bg-light p-2 border">
-                                <div class="fw-semibold text-dark mb-1">
-                                    📝 Değişiklik Notu
-                                </div>
-
-                                <div class="small text-secondary">
-                                    "{{ $notification->data['change_note'] }}"
-                                </div>
-                            </div>
-                        @endif
-                    </li>
-
-                @empty
-
-                    <li class="px-3 py-2 text-muted">
-                        Bildirim bulunmuyor.
-                    </li>
-
-                @endforelse
+            <ul id="notificationDropdown" class="dropdown-menu dropdown-menu-end" style="width:320px;">
+                @include('partials.notifications')
 
             </ul>
 
@@ -235,14 +173,20 @@
                                     <form
                                         action="{{ route('tasks.reject', $task->id) }}"
                                         method="POST"
+                                        class="mt-2"
                                     >
                                         @csrf
                                         @method('PATCH')
 
-                                        <button
-                                            type="submit"
-                                            class="btn btn-outline-danger btn-sm"
-                                        >
+                                        <textarea
+                                            name="rejection_note"
+                                            class="form-control mb-2"
+                                            rows="2"
+                                            placeholder="Reddetme nedeninizi yazın..."
+                                            required
+                                        ></textarea>
+
+                                        <button type="submit" class="btn btn-outline-danger">
                                             <i class="bi bi-x-lg me-1"></i>
                                             Reddet
                                         </button>
@@ -498,7 +442,7 @@
                                             <i class="bi bi-three-dots-vertical"></i>
                                         </button>
 
-                                        <ul class="dropdown-menu dropdown-menu-end">
+                                        <ul id="notificationDropdown" class="dropdown-menu dropdown-menu-end">
                                             <li>
                                                 <a
                                                     class="dropdown-item"
@@ -761,6 +705,53 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdown = document.getElementById('notificationDropdown');
+    const badge = document.getElementById('notificationCount');
 
+    if (!dropdown || !badge) {
+        console.error('Bildirim alanı bulunamadı.');
+        return;
+    }
+
+    async function refreshNotifications() {
+        try {
+            const response = await fetch(
+                '{{ url('/notifications/dropdown') }}',
+                {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                }
+            );
+
+            if (!response.ok) {
+                console.error('Bildirim isteği başarısız:', response.status);
+                return;
+            }
+
+            dropdown.innerHTML = await response.text();
+
+            const notificationItems =
+                dropdown.querySelectorAll('[data-notification-item]');
+
+            const count = notificationItems.length;
+
+            badge.textContent = count;
+            badge.classList.toggle('d-none', count === 0);
+        } catch (error) {
+            console.error('Bildirim yenileme hatası:', error);
+        }
+    }
+
+    refreshNotifications();
+    setInterval(refreshNotifications, 5000);
+});
+</script>
 </body>
 </html>

@@ -25,6 +25,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/tasks/{task}/reject', [TaskController::class, 'reject'])->name('tasks.reject');
     Route::patch('/notifications/read', function () {auth()->user()->unreadNotifications->markAsRead();
         return redirect()->back();})->name('notifications.read');
+    Route::get('/notifications/count', function () {
+        return response()->json([
+            'count' => auth()->user()->unreadNotifications()->count(),
+        ]);
+    })->name('notifications.count');
+    Route::get('/notifications/dropdown', function () {
+    $notifications = auth()->user()->unreadNotifications;
+    return view('partials.notifications', compact('notifications'));
+    })->middleware('auth');
     Route::post('/tasks/{task}/feedback', [TaskController::class, 'sendFeedback'])->name('tasks.feedback');
     Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');

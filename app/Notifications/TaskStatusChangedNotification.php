@@ -11,8 +11,9 @@ class TaskStatusChangedNotification extends Notification
     use Queueable;
 
     public function __construct(
-        public Task $task,
-        public string $status
+    public Task $task,
+    public string $status,
+    public ?string $rejectionNote = null
     ) {}
 
     public function via(object $notifiable): array
@@ -23,23 +24,25 @@ class TaskStatusChangedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'task_id' => $this->task->id,
-            'title' => $this->task->title,
-            'status' => $this->status,
-            'user' => auth()->user()->name,
+        'task_id' => $this->task->id,
+        'title' => $this->task->title,
+        'status' => $this->status,
+        'user' => auth()->user()->name,
 
-            'message' => match ($this->status) {
-                'accepted' =>
-                    auth()->user()->name . ' görevi kabul etti.',
+        'message' => match ($this->status) {
+            'accepted' =>
+                auth()->user()->name . ' görevi kabul etti.',
 
-                'rejected' =>
-                    auth()->user()->name . ' görevi reddetti.',
+            'rejected' =>
+                auth()->user()->name . ' görevi reddetti.',
 
-                'completed' =>
-                    auth()->user()->name . ' görevi tamamladı.',
+            'completed' =>
+                auth()->user()->name . ' görevi tamamladı.',
 
-                default => '',
-            },
-        ];
+            default => '',
+        },
+
+        'rejection_note' => $this->rejectionNote,
+    ];
     }
 }

@@ -294,18 +294,25 @@ public function update(Request $request, Task $task)
     );
 }
 
-public function reject(Task $task)
+public function reject(Request $request, Task $task)
 {
     abort_if($task->assigned_to !== auth()->id(), 403);
+    $request->validate([
+    'rejection_note' => 'required|string|max:1000',
+    ]);
 
     $task->update([
         'assignment_status' => 'rejected',
     ]);
     if ($task->assignedBy) {
-    $task->assignedBy->notify(
-        new TaskStatusChangedNotification($task, 'rejected')
-    );
-}
+        $task->assignedBy->notify(
+            new TaskStatusChangedNotification(
+                $task,
+                'rejected',
+                $request->rejection_note
+            )
+        );
+    }
 
     return redirect()->back()->with(
         'success',
