@@ -39,7 +39,10 @@
                     💬 Geri Bildirim
                 </div>
 
-                <div class="small text-secondary">
+                <div
+                    class="small text-secondary text-break"
+                    style="overflow-wrap:anywhere; word-break:break-word;"
+                >
                     "{{ $notification->data['feedback'] }}"
                 </div>
             </div>
@@ -51,7 +54,10 @@
                     📝 Değişiklik Notu
                 </div>
 
-                <div class="small text-secondary">
+                <div
+                    class="small text-secondary text-break"
+                    style="overflow-wrap:anywhere; word-break:break-word;"
+                >
                     "{{ $notification->data['change_note'] }}"
                 </div>
             </div>
@@ -63,7 +69,10 @@
                     ❌ Reddetme Nedeni
                 </div>
 
-                <div class="small text-secondary">
+                <div
+                    class="small text-secondary text-break"
+                    style="overflow-wrap:anywhere; word-break:break-word;"
+                >
                     "{{ $notification->data['rejection_note'] }}"
                 </div>
             </div>

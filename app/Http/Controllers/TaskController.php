@@ -138,6 +138,19 @@ public function edit(Task $task)
     return view('edit', compact('task', 'users'));
 }
 
+public function show(Task $task)
+{
+    $task->load([
+        'todoList',
+        'assignedUser',
+        'assignedBy',
+        'comments.user',
+        'comments.replies.user',
+    ]);
+
+    return view('tasks.show', compact('task'));
+}
+
 public function update(Request $request, Task $task)
 {
     $isOwner =

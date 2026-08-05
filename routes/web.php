@@ -5,12 +5,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\CommentController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', [TaskController::class, 'index'])->name('tasks.index');
     Route::post('/lists', [TodoListController::class, 'store']) ->name('lists.store');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::patch('/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('tasks.toggle');
+    Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::get('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
@@ -37,6 +39,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tasks/{task}/feedback', [TaskController::class, 'sendFeedback'])->name('tasks.feedback');
     Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
     Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
-});
+    Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])
+    ->name('comments.store');
+    });
+    Route::get('/tasks/{task}/comments', function (\App\Models\Task $task) {
+        $task->load([
+            'comments.user',
+            'comments.replies.user',
+        ]);
+
+        return view('partials.comments-list', compact('task'));
+    })->name('comments.list');
 
 require __DIR__.'/auth.php';

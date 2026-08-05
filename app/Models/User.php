@@ -35,4 +35,10 @@ class User extends Authenticatable implements MustVerifyEmail{
 {
     return $this->hasMany(TodoList::class);
 }
+
+    public function comments()
+{
+    return $this->hasMany(Comment::class);
+}
+
 }

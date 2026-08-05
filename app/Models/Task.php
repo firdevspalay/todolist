@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Comment;
 
 class Task extends Model
 {
@@ -30,5 +31,12 @@ class Task extends Model
     public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class)
+            ->whereNull('parent_id')
+            ->latest();
     }
 }

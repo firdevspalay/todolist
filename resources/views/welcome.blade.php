@@ -77,7 +77,11 @@
 
             </button>
 
-            <ul id="notificationDropdown" class="dropdown-menu dropdown-menu-end" style="width:320px;">
+            <ul
+                id="notificationDropdown"
+                class="dropdown-menu dropdown-menu-end"
+                style="width:min(320px, calc(100vw - 24px)); max-height:70vh; overflow-y:auto;"
+            >
                 @include('partials.notifications')
 
             </ul>
@@ -129,7 +133,12 @@
                         @foreach($assignedTasks as $task)
                             <div class="border rounded p-3 mb-3">
                                 <div class="fw-semibold mb-1">
-                                    {{ $task->title }}
+                                    <a
+                                        href="{{ route('tasks.show', $task) }}"
+                                        class="text-decoration-none text-dark"
+                                    >
+                                        {{ $task->title }}
+                                    </a>
                                 </div>
 
                                 @if($task->due_date)
@@ -219,7 +228,13 @@
                             @if($task->is_completed)
                                 <div class="fw-semibold mb-1 text-decoration-line-through text-muted">
                                     <i class="bi bi-check-circle-fill text-success me-1"></i>
-                                    {{ $task->title }}
+
+                                    <a
+                                        href="{{ route('tasks.show', $task) }}"
+                                        class="text-decoration-none text-muted"
+                                    >
+                                        {{ $task->title }}
+                                    </a>
                                 </div>
 
                                 <small class="text-success d-block mb-1">
@@ -227,7 +242,12 @@
                                 </small>
                             @else
                                 <div class="fw-semibold mb-1">
-                                    {{ $task->title }}
+                                    <a
+                                        href="{{ route('tasks.show', $task) }}"
+                                        class="text-decoration-none text-dark"
+                                    >
+                                        {{ $task->title }}
+                                    </a>
                                 </div>
                             @endif
 
@@ -353,7 +373,12 @@
                 <div class="border rounded p-3 mb-3">
 
                     <div class="fw-semibold mb-1">
-                        {{ $task->title }}
+                        <a
+                            href="{{ route('tasks.show', $task) }}"
+                            class="text-decoration-none text-dark"
+                        >
+                            {{ $task->title }}
+                        </a>
                     </div>
 
                     @if($task->due_date)
@@ -487,15 +512,27 @@
                                             <div class="flex-grow-1">
 
                                                 {{-- Görev adı --}}
-                                                @if($task->is_completed)
+                                               @if($task->is_completed)
                                                     <div class="text-decoration-line-through text-muted text-break">
                                                         <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                                        {{ $task->title }}
+
+                                                        <a
+                                                            href="{{ route('tasks.show', $task) }}"
+                                                            class="text-muted text-decoration-none"
+                                                        >
+                                                            {{ $task->title }}
+                                                        </a>
                                                     </div>
-                                                @else
+                                               @else
                                                     <div class="text-break">
                                                         <i class="bi bi-circle text-muted me-2"></i>
-                                                        {{ $task->title }}
+
+                                                        <a
+                                                            href="{{ route('tasks.show', $task) }}"
+                                                            class="text-dark text-decoration-none"
+                                                        >
+                                                            {{ $task->title }}
+                                                        </a>
                                                     </div>
                                                 @endif
 
