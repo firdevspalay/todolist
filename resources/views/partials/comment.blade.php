@@ -31,7 +31,11 @@
         style="display:none;"
     >
 
-        <form action="{{ route('comments.store', $task) }}" method="POST">
+        <form
+            action="{{ route('comments.store', $task) }}"
+            method="POST"
+            class="prevent-double-submit"
+        >
 
             @csrf
 

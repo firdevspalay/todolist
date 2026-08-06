@@ -625,6 +625,7 @@
                                                 <form
                                                     action="{{ route('tasks.destroy', $task->id) }}"
                                                     method="POST"
+                                                    class="delete-task-form"
                                                 >
                                                     @csrf
                                                     @method('DELETE')
@@ -632,7 +633,6 @@
                                                     <button
                                                         type="submit"
                                                         class="btn btn-sm btn-outline-danger"
-                                                        onclick="return confirm('Bu görev silinsin mi?')"
                                                     >
                                                         <i class="bi bi-trash"></i>
                                                     </button>
@@ -819,6 +819,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     refreshNotifications();
     setInterval(refreshNotifications, 5000);
+});
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+
+        if (!form.classList.contains('delete-task-form')) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (form.dataset.submitting === 'true') {
+            return;
+        }
+
+        const confirmed = confirm('Bu görev silinsin mi?');
+
+        if (!confirmed) {
+            return;
+        }
+
+        form.dataset.submitting = 'true';
+
+        const button = form.querySelector('button[type="submit"]');
+
+        if (button) {
+            button.disabled = true;
+        }
+
+        form.submit();
 });
 </script>
 </body> 

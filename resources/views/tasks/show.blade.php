@@ -118,6 +118,7 @@
                     <form
                         action="{{ route('comments.store', $task) }}"
                         method="POST"
+                        class="prevent-double-submit"
                     >
                         @csrf
 
@@ -234,6 +235,38 @@ setTimeout(() => {
     document.getElementById('successToast')?.remove();
     document.getElementById('errorToast')?.remove();
 }, 3000);
+
+
+document.addEventListener('submit', function (event) {
+    const form = event.target.closest('.prevent-double-submit');
+
+    if (!form) {
+        return;
+    }
+
+    if (form.dataset.submitting === 'true') {
+        event.preventDefault();
+        return;
+    }
+
+    form.dataset.submitting = 'true';
+
+    const submitButton = form.querySelector(
+        'button[type="submit"], input[type="submit"]'
+    );
+
+    if (submitButton) {
+        submitButton.disabled = true;
+
+        if (submitButton.tagName === 'BUTTON') {
+            submitButton.dataset.originalText =
+                submitButton.innerHTML;
+
+            submitButton.innerHTML =
+                '<span class="spinner-border spinner-border-sm me-1"></span> Gönderiliyor...';
+        }
+    }
+});
 </script>
 
 </body>
