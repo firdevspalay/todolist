@@ -16,14 +16,17 @@
 
 @forelse($notifications as $notification)
 
-    <li class="px-3 py-2 border-bottom" data-notification-item>
-        <strong>
-            {{
-                $notification->data['employee']
-                ?? $notification->data['assigned_by']
-                ?? $notification->data['user']
-                ?? 'Sistem'
-            }}
+    <li
+        class="px-3 py-2 border-bottom {{ is_null($notification->read_at) ? 'bg-secondary-subtle' : '' }}"
+        data-notification-item
+    >
+        @if(is_null($notification->read_at))
+            <span
+                class="d-inline-block rounded-circle bg-primary me-2"
+                style="width: 8px; height: 8px;"
+            ></span>
+        @endif
+
         </strong>
         <br>
 

@@ -310,9 +310,16 @@ public function update(Request $request, Task $task)
 public function reject(Request $request, Task $task)
 {
     abort_if($task->assigned_to !== auth()->id(), 403);
-    $request->validate([
-    'rejection_note' => 'required|string|max:1000',
-    ]);
+    $request->validate(
+        [
+            'rejection_note' => 'required|string|max:300',
+        ],
+        [
+            'rejection_note.required' => 'Reddetme nedeni boş bırakılamaz.',
+            'rejection_note.string' => 'Reddetme nedeni geçerli bir metin olmalıdır.',
+            'rejection_note.max' => 'Reddetme nedeni en fazla 300 karakter olabilir.',
+        ]
+    );
 
     $task->update([
         'assignment_status' => 'rejected',
@@ -338,7 +345,7 @@ public function sendFeedback(Request $request, Task $task)
     abort_unless(auth()->user()->can('send feedback'), 403);
 
     $request->validate([
-        'feedback' => 'required|string|max:1000',
+        'feedback' => 'required|string|max:300',
     ]);
 
     if ($task->assignedBy) {

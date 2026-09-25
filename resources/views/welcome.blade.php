@@ -37,6 +37,25 @@
             }, 3000);
         </script>
     @endif
+    @if ($errors->any())
+        <div
+            id="error-toast"
+            class="position-fixed top-0 end-0 m-4 alert alert-danger shadow"
+            style="z-index: 9999;"
+        >
+            {{ $errors->first() }}
+        </div>
+
+        <script>
+            setTimeout(() => {
+                const toast = document.getElementById('error-toast');
+
+                if (toast) {
+                    toast.remove();
+                }
+            }, 5000);
+        </script>
+    @endif
 
 <div class="container py-5">
     <div class="row justify-content-center">
@@ -64,6 +83,7 @@
 
             <button
                 class="btn btn-outline-secondary position-relative"
+                id="notificationBell"
                 data-bs-toggle="dropdown"
             >
                 <i class="bi bi-bell"></i>
@@ -193,8 +213,12 @@
                                             class="form-control mb-2"
                                             rows="2"
                                             placeholder="Reddetme nedeninizi yazın..."
+                                            maxlength="300"
                                             required
                                         ></textarea>
+                                        <div class="text-end mt-1 mb-2">
+                                            <small class="text-muted rejection-counter">0/300</small>
+                                        </div>
 
                                         <button
                                             type="submit"
@@ -334,23 +358,29 @@
                         >
                             @csrf
 
-                            <div class="input-group">
-                                <input
-                                    type="text"
-                                    name="feedback"
-                                    class="form-control"
-                                    placeholder="Görev hakkında geri bildirim yazın..."
-                                    maxlength="1000"
-                                    required
-                                >
+                            <div>
+                                <div class="input-group">
+                                    <textarea
+                                        name="feedback"
+                                        class="form-control feedback-textarea"
+                                        placeholder="Görev hakkında geri bildirim yazın..."
+                                        maxlength="300"
+                                        rows="2"
+                                        required
+                                    ></textarea>
 
-                                <button
-                                    type="submit"
-                                    class="btn btn-outline-primary"
-                                >
-                                    <i class="bi bi-send me-1"></i>
-                                    Gönder
-                                </button>
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-primary"
+                                    >
+                                        <i class="bi bi-send me-1"></i>
+                                        Gönder
+                                    </button>
+                                </div>
+
+                                <div class="text-end mt-1">
+                                    <small class="text-muted feedback-counter">0/300</small>
+                                </div>
                             </div>
                         </form>
                     @endcan
@@ -617,7 +647,8 @@
                                                     <a
                                                         href="{{ route('tasks.edit', $task->id) }}"
                                                         class="btn btn-sm btn-outline-warning"
-                                                    >
+                                                        title="Görevi düzenle"
+                                                        >
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 @endif
@@ -633,6 +664,7 @@
                                                     <button
                                                         type="submit"
                                                         class="btn btn-sm btn-outline-danger"
+                                                        title="Görevi sil"
                                                     >
                                                         <i class="bi bi-trash"></i>
                                                     </button>
@@ -750,6 +782,27 @@
 document.addEventListener('DOMContentLoaded', () => {
     const dropdown = document.getElementById('notificationDropdown');
     const badge = document.getElementById('notificationCount');
+    const bell = document.getElementById('notificationBell');
+    let isNotificationDropdownOpen = false;
+    bell.addEventListener('shown.bs.dropdown', () => {
+        isNotificationDropdownOpen = true;
+    });
+
+    bell.addEventListener('hidden.bs.dropdown', () => {
+        isNotificationDropdownOpen = false;
+        refreshNotifications();
+    });
+    bell.addEventListener('click', async () => {
+        await fetch('{{ route('notifications.read') }}', {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+        badge.textContent = '0';
+        badge.classList.add('d-none');
+    });
 
     if (!dropdown || !badge) {
         console.error('Bildirim alanı bulunamadı.');
@@ -787,21 +840,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const temporaryContainer = document.createElement('div');
             temporaryContainer.innerHTML = html;
 
-            const newNotificationCount =
-                temporaryContainer.querySelectorAll(
-                    '[data-notification-item]'
-                ).length;
+            const countResponse = await fetch('{{ route('notifications.count') }}');
+            const countData = await countResponse.json();
+            const newNotificationCount = countData.count;
 
-            /*
-             * Yeni bildirim geldiğinde görevlerin durumu da değişmiş
-             * olabileceği için ana sayfayı yalnızca bir kez yeniler.
-             */
-            if (newNotificationCount !== lastNotificationCount) {
-                window.location.reload();
-                return;
+            
+            if (!isNotificationDropdownOpen) {
+                dropdown.innerHTML = html;
             }
-
-            dropdown.innerHTML = html;
             badge.textContent = newNotificationCount;
             badge.classList.toggle(
                 'd-none',
@@ -848,6 +894,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         form.submit();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.feedback-textarea').forEach(textarea => {
+        const counter = textarea
+            .closest('div')
+            .parentElement
+            .querySelector('.feedback-counter');
+
+        const updateCounter = () => {
+            counter.textContent = `${textarea.value.length}/300`;
+        };
+
+        textarea.addEventListener('input', updateCounter);
+        updateCounter();
+    });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('textarea[name="rejection_note"]').forEach(textarea => {
+        const counter = textarea
+            .closest('form')
+            .querySelector('.rejection-counter');
+
+        const updateCounter = () => {
+            counter.textContent = `${textarea.value.length}/300`;
+        };
+
+        textarea.addEventListener('input', updateCounter);
+        updateCounter();
+    });
 });
 </script>
 </body> 

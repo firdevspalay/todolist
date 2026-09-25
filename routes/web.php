@@ -33,7 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
     })->name('notifications.count');
     Route::get('/notifications/dropdown', function () {
-    $notifications = auth()->user()->unreadNotifications;
+    $notifications = auth()->user()->Notifications;
     return view('partials.notifications', compact('notifications'));
     })->middleware('auth');
     Route::post('/tasks/{task}/feedback', [TaskController::class, 'sendFeedback'])->name('tasks.feedback');
