@@ -638,6 +638,7 @@
                                                     <button
                                                         type="submit"
                                                         class="btn btn-sm {{ $task->is_completed ? 'btn-outline-secondary' : 'btn-outline-success' }}"
+                                                        title="{{ $task->is_completed ? 'Tamamlanmadı olarak işaretle' : 'Görevi tamamla' }}"
                                                     >
                                                         <i class="bi {{ $task->is_completed ? 'bi-arrow-counterclockwise' : 'bi-check-lg' }}"></i>
                                                     </button>
