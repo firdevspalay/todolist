@@ -1,4 +1,7 @@
 <x-app-layout>
+    @php
+        $allPermissions = \Spatie\Permission\Models\Permission::all();
+    @endphp
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800">
             Çalışan Yönetimi
@@ -14,15 +17,21 @@
                     </div>
                 @endif
 
-                <div class="grid items-start gap-4 md:grid-cols-2">
-                    @foreach ($employees as $employee)
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 items-start">
+                    @foreach ([$employees->take((int) ceil($employees->count() / 2)), $employees->skip((int) ceil($employees->count() / 2))] as $columnEmployees)
+                        <div class="space-y-4">
+                    @foreach ($columnEmployees as $employee)
                         @php
                             $roleName = $employee->roles->pluck('name')->first() ?? 'employee';
-                            $roleLabel = $roleName === 'manager' ? 'Yönetici' : 'Çalışan';
+                            $roleLabel = match ($roleName) {
+                                'super_admin' => 'Super Admin',
+                                'manager' => 'Yönetici',
+                                default => 'Çalışan',
+                            };
                         @endphp
 
                         <details
-                            class="group self-start overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-gray-300 hover:shadow-md"
+                            class="block w-full group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-gray-300 hover:shadow-md"
                         >
                             <summary
                                 class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4"
@@ -77,6 +86,14 @@
                                         id="role-{{ $employee->id }}"
                                         name="role"
                                         class="w-28 rounded-md border-gray-300 py-1 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        @if(auth()->user()->hasRole('super_admin'))
+                                            <option
+                                                value="super_admin"
+                                                {{ $roleName === 'super_admin' ? 'selected' : '' }}
+                                            >
+                                                Super Admin
+                                            </option>
+                                        @endif
                                         <option
                                             value="manager"
                                             {{ $roleName === 'manager' ? 'selected' : '' }}
@@ -99,59 +116,66 @@
                                     </p>
 
                                     <div class="space-y-2.5">
-                                        <label class="flex cursor-pointer items-center gap-2.5">
-                                            <input
-                                                type="checkbox"
-                                                name="permissions[]"
-                                                value="edit task title"
-                                                {{ $employee->hasPermissionTo('edit task title') ? 'checked' : '' }}
-                                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
+                                        @php
+                                            $visiblePermissions = auth()->user()->hasRole('super_admin')
+                                                ? $allPermissions
+                                                : $allPermissions->whereIn('name', [
+                                                    'edit task title',
+                                                    'change due date',
+                                                    'send feedback',
+                                                    'comment on task',
+                                                ]);
+                                        @endphp
 
-                                            <span class="text-sm text-gray-700">
-                                                Görev başlığını düzenleyebilir
-                                            </span>
-                                        </label>
+                                        @foreach ($visiblePermissions as $permission)
+                                            <label class="flex cursor-pointer items-center gap-2.5">
+                                                <input
+                                                    type="checkbox"
+                                                    name="permissions[]"
+                                                    value="{{ $permission->name }}"
+                                                    {{ $employee->hasPermissionTo($permission->name) ? 'checked' : '' }}
+                                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                                />
 
-                                        <label class="flex cursor-pointer items-center gap-2.5">
-                                            <input
-                                                type="checkbox"
-                                                name="permissions[]"
-                                                value="change due date"
-                                                {{ $employee->hasPermissionTo('change due date') ? 'checked' : '' }}
-                                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span class="text-sm text-gray-700">
-                                                Termin tarihini değiştirebilir
-                                            </span>
-                                        </label>
-
-                                        <label class="flex cursor-pointer items-center gap-2.5">
-                                            <input
-                                                type="checkbox"
-                                                name="permissions[]"
-                                                value="send feedback"
-                                                {{ $employee->hasPermissionTo('send feedback') ? 'checked' : '' }}
-                                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span class="text-sm text-gray-700">
-                                                Geri bildirim gönderebilir
-                                            </span>
-                                        </label>
+                                                <span class="text-sm text-gray-700">
+                                                    {{ [
+                                                        'edit task title' => 'Görev başlığını düzenleme',
+                                                        'change due date' => 'Termin tarihini değiştirme',
+                                                        'send feedback' => 'Geri bildirim gönderme',
+                                                        'comment on task' => 'Göreve yorum yapma',
+                                                        'create task' => 'Görev oluşturma',
+                                                        'delete task' => 'Görev silme',
+                                                        'assign task' => 'Görev atama',
+                                                    ][$permission->name] ?? $permission->name }}
+                                                </span>
+                                            </label>
+                                        @endforeach
                                     </div>
                                 </div>
 
-                                <div class="mt-5 flex justify-end">
-                                    <button
-                                        type="submit"
-                                        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                                    >
-                                        Değişiklikleri Kaydet
-                                    </button>
-                                </div>
+                              <div class="mt-5 flex justify-end">
+                                <button
+                                    type="submit"
+                                    style="
+                                        background-color: #4f46e5;
+                                        color: white;
+                                        padding: 8px 16px;
+                                        border: none;
+                                        border-radius: 6px;
+                                        font-size: 14px;
+                                        font-weight: 600;
+                                        cursor: pointer;
+                                    "
+                                >
+                                    Değişiklikleri Kaydet
+                                </button>
+                            </div>
                             </div>
                             </form>
                         </details>
+
+                    @endforeach
+                        </div>
                     @endforeach
                 </div>
 

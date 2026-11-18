@@ -38,6 +38,26 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's automatic refresh settings.
+     */
+    public function updateRefreshSettings(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'refresh_interval' => ['required', 'integer', 'in:15,30,60,120,300'],
+        ]);
+
+        $user = $request->user();
+
+        $user->auto_refresh_enabled = $request->boolean('auto_refresh_enabled');
+        $user->refresh_interval = $validated['refresh_interval'];
+
+        $user->save();
+
+        return Redirect::route('profile.edit')
+            ->with('status', 'refresh-settings-updated');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

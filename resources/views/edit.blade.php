@@ -17,148 +17,180 @@
     >
 </head>
 
-<body class="bg-light">
+<body style="background:#f5f7fb; min-height:100vh;">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
+    @include('layouts.navigation')
 
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">
-                        <i class="bi bi-pencil-square me-2"></i>
-                        Görevi Düzenle
-                    </h4>
-                </div>
+    <main class="lg:ml-64">
 
-                <div class="card-body">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
 
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            {{ $errors->first() }}
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header text-white"
+                            style="background: linear-gradient(135deg, #4338ca, #6366f1); padding: 20px 24px;">
+                            <h4 class="mb-0">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                Görevi Düzenle
+                            </h4>
                         </div>
-                    @endif
 
-                    <form
-                        action="{{ route('tasks.update', $task->id) }}"
-                        method="POST"
-                    >
-                        @csrf
-                        @method('PUT')
+                        <div class="card-body">
 
-                        @role('manager')
+                            @if($errors->any())
+                                <div class="alert alert-danger">
+                                    {{ $errors->first() }}
+                                </div>
+                            @endif
 
-                            <div class="mb-3">
-                                <label class="form-label">Görev</label>
-
-                                <input
-                                    type="text"
-                                    name="title"
-                                    value="{{ old('title', $task->title) }}"
-                                    class="form-control"
-                                    required
-                                >
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Termin Tarihi</label>
-
-                                <input
-                                    type="date"
-                                    name="due_date"
-                                    value="{{ old('due_date', $task->due_date) }}"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="assigned_to" class="form-label">
-                                    Atanacak Kişi
-                                </label>
-
-                                <select
-                                    id="assigned_to"
-                                    name="assigned_to"
-                                    class="form-select"
-                                >
-                                    <option value="">Kimse</option>
-
-                                    @foreach($users as $user)
-                                        <option
-                                            value="{{ $user->id }}"
-                                            @selected(
-                                                old('assigned_to', $task->assigned_to)
-                                                == $user->id
-                                            )
-                                        >
-                                            {{ $user->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                        @else
-
-                            <div class="mb-3">
-                                <label class="form-label">Görev</label>
-
-                                <input
-                                    type="text"
-                                    value="{{ $task->title }}"
-                                    class="form-control"
-                                    disabled
-                                >
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Termin Tarihi</label>
-
-                                <input
-                                    type="date"
-                                    name="due_date"
-                                    value="{{ old('due_date', $task->due_date) }}"
-                                    class="form-control"
-                                >
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="change_note" class="form-label">
-                                    Değişiklik Notu
-                                </label>
-
-                                <textarea
-                                    id="change_note"
-                                    name="change_note"
-                                    class="form-control"
-                                    rows="4"
-                                    placeholder="Termin tarihini değiştirme nedeninizi yazın..."
-                                >{{ old('change_note') }}</textarea>
-                            </div>
-
-                        @endrole
-
-                        <div class="d-flex justify-content-between">
-                            <a
-                                href="{{ route('tasks.index') }}"
-                                class="btn btn-secondary"
+                            <form
+                                action="{{ route('tasks.update', $task->id) }}"
+                                method="POST"
                             >
-                                Geri
-                            </a>
+                                @csrf
+                                @method('PUT')
+                                
+                                @php
+                                    $isOwner = (int) auth()->id() === (int) $task->todoList?->user_id;
 
-                            <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-check-lg me-1"></i>
-                                Kaydet
-                            </button>
+                                    $isAcceptedAssignee =
+                                        auth()->id() === $task->assigned_to
+                                        && $task->assignment_status === 'accepted';
+
+                                    $canEditTitle =
+                                        $isOwner
+                                        || (
+                                            $isAcceptedAssignee
+                                            && auth()->user()->can('edit task title')
+                                        );
+
+                                    $canChangeDueDate =
+                                        $isOwner
+                                        || (
+                                            $isAcceptedAssignee
+                                            && auth()->user()->can('change due date')
+                                        );
+                                @endphp
+
+
+                                {{-- GÖREV BAŞLIĞI --}}
+                                <div class="mb-3">
+                                    <label class="form-label">Görev</label>
+
+                                    @if($canEditTitle)
+                                        <input
+                                            type="text"
+                                            name="title"
+                                            value="{{ old('title', $task->title) }}"
+                                            class="form-control"
+                                            required
+                                        >
+                                    @else
+                                        <input
+                                            type="text"
+                                            value="{{ $task->title }}"
+                                            class="form-control"
+                                            disabled
+                                        >
+                                    @endif
+                                </div>
+
+
+                                {{-- TERMİN TARİHİ --}}
+                                <div class="mb-3">
+                                    <label class="form-label">Termin Tarihi</label>
+
+                                    @if($canChangeDueDate)
+                                        <input
+                                            type="date"
+                                            name="due_date"
+                                            value="{{ old('due_date', $task->due_date) }}"
+                                            class="form-control"
+                                        >
+                                    @else
+                                        <input
+                                            type="date"
+                                            value="{{ $task->due_date }}"
+                                            class="form-control"
+                                            disabled
+                                        >
+                                    @endif
+                                </div>
+
+
+                                {{-- EMPLOYEE TERMİN DEĞİŞİKLİK NOTU --}}
+                                @if($isAcceptedAssignee && $canChangeDueDate)
+                                    <div class="mb-3">
+                                        <label for="change_note" class="form-label">
+                                            Değişiklik Notu
+                                        </label>
+
+                                        <textarea
+                                            id="change_note"
+                                            name="change_note"
+                                            class="form-control"
+                                            rows="4"
+                                            placeholder="Termin tarihini değiştirme nedeninizi yazın..."
+                                        >{{ old('change_note') }}</textarea>
+                                    </div>
+                                @endif
+
+
+                                {{-- GÖREV ATAMA: SADECE GÖREV SAHİBİ --}}
+                                @if($isOwner)
+                                    <div class="mb-3">
+                                        <label for="assigned_to" class="form-label">
+                                            Atanacak Kişi
+                                        </label>
+
+                                        <select
+                                            id="assigned_to"
+                                            name="assigned_to"
+                                            class="form-select"
+                                        >
+                                            <option value="">Kimse</option>
+
+                                            @foreach($users as $user)
+                                                <option
+                                                    value="{{ $user->id }}"
+                                                    @selected(
+                                                        old('assigned_to', $task->assigned_to)
+                                                        == $user->id
+                                                    )
+                                                >
+                                                    {{ $user->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+
+
+                                <div class="d-flex justify-content-between">
+                                    <a
+                                        href="{{ url()->previous() }}"
+                                        class="btn btn-secondary"
+                                    >
+                                        Geri
+                                    </a>
+
+                                    <button type="submit" class="btn text-white"
+                                            style="background:#4f46e5; border-radius:8px; padding:9px 20px;">
+                                        <i class="bi bi-check-lg me-1"></i>
+                                        Kaydet
+                                    </button>
+                                </div>
+
+                            </form>
+
                         </div>
-
-                    </form>
+                    </div>
 
                 </div>
             </div>
-
         </div>
-    </div>
-</div>
-
+    </main>
 </body>
 </html>

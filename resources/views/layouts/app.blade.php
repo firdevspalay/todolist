@@ -46,9 +46,21 @@
             @endif
 
             <!-- Page Content -->
-            <main>
+            <main class="min-h-screen lg:ml-64">
                 {{ $slot }}
             </main>
         </div>
+        
+        @auth
+            @if(auth()->user()->auto_refresh_enabled)
+                <script>
+                    setInterval(() => {
+                        if (document.visibilityState === 'visible') {
+                            window.location.reload();
+                        }
+                    }, {{ auth()->user()->refresh_interval * 1000 }});
+                </script>
+            @endif
+        @endauth
     </body>
 </html>

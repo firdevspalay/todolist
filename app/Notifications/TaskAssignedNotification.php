@@ -27,8 +27,8 @@ class TaskAssignedNotification extends Notification
         return [
             'task_id' => $this->task->id,
             'title' => $this->task->title,
-            'assigned_by' => auth()->user()->name,
-            'message' => auth()->user()->name . ' size yeni bir görev atadı.',
+            'assigned_by' => $this->task->assignedBy?->name ?? 'Sistem',
+            'message' => ($this->task->assignedBy?->name ?? 'Sistem') . ' size yeni bir görev atadı.',
         ];
     }
 }

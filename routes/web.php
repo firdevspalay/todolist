@@ -10,6 +10,7 @@ use App\Http\Controllers\CommentController;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', [TaskController::class, 'index'])->name('tasks.index');
     Route::post('/lists', [TodoListController::class, 'store']) ->name('lists.store');
+    Route::get('/tasks/create', [TaskController::class, 'create'])->name('tasks.create');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::patch('/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('tasks.toggle');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
@@ -17,14 +18,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     Route::get('/dashboard', [TaskController::class, 'index'])->name('dashboard');
+    Route::get('/all-tasks', [TaskController::class, 'allTasks'])
+        ->middleware('role:manager|super_admin')
+        ->name('tasks.all');
+    Route::get('/my-tasks', [TaskController::class, 'myTasks'])
+        ->name('tasks.mine');    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile/refresh-settings', [ProfileController::class, 'updateRefreshSettings'])
+        ->name('profile.refresh-settings');
     Route::get('/lists/{list}/edit', [TodoListController::class, 'edit'])->name('lists.edit');
     Route::put('/lists/{list}', [TodoListController::class, 'update'])->name('lists.update');
     Route::delete('/lists/{list}', [TodoListController::class, 'destroy'])->name('lists.destroy');
     Route::patch('/tasks/{task}/accept', [TaskController::class, 'accept'])->name('tasks.accept');
     Route::patch('/tasks/{task}/reject', [TaskController::class, 'reject'])->name('tasks.reject');
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status');
     Route::patch('/notifications/read', function () {auth()->user()->unreadNotifications->markAsRead();
         return redirect()->back();})->name('notifications.read');
     Route::get('/notifications/count', function () {
@@ -49,6 +58,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
 
         return view('partials.comments-list', compact('task'));
-    })->name('comments.list');
+    })->middleware(['auth', 'verified'])->name('comments.list');
 
 require __DIR__.'/auth.php';

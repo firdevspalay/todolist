@@ -14,6 +14,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit task title',
             'change due date',
             'send feedback',
+            'comment on task',
             'create task',
             'delete task',
             'assign task',
@@ -34,5 +35,7 @@ class RolesAndPermissionsSeeder extends Seeder
         ]);
 
         $manager->givePermissionTo(Permission::all());
+        $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
+        $superAdmin->syncPermissions(Permission::all());
     }
 }

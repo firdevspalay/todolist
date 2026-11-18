@@ -28,6 +28,8 @@ class User extends Authenticatable implements MustVerifyEmail{
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'auto_refresh_enabled' => 'boolean',
+            'refresh_interval' => 'integer',
         ];
     }
 

@@ -7,7 +7,7 @@
         </strong>
 
         <small class="text-muted">
-            {{ $comment->created_at->format('d.m.Y H:i') }}
+            {{ $comment->created_at->timezone('Europe/Istanbul')->format('d.m.Y H:i') }}
         </small>
 
     </div>
@@ -16,9 +16,11 @@
         {{ $comment->body }}
     </div>
 
+    @if(!auth()->user()->hasRole('employee') || auth()->user()->can('comment on task'))
+
    <button
         type="button"
-        class="btn btn-sm btn-outline-primary reply-button"
+        class="btn btn-sm reply-button" style="color:#4f46e5; border:1px solid #4f46e5;"
         data-comment="{{ $comment->id }}"
     >
         <i class="bi bi-reply me-1"></i>
@@ -55,13 +57,14 @@
                 ></textarea>
             </div>
 
-            <button class="btn btn-sm btn-primary">
+            <button class="btn btn-sm text-white" style="background:#4f46e5; border:1px solid #4f46e5;">
                 Gönder
             </button>
 
         </form>
 
     </div>
+    @endif
 
     @if($comment->replies->count())
 

@@ -5,11 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Task;
 use Illuminate\Http\Request;
+use App\Notifications\TaskCommentNotification;
 
 class CommentController extends Controller
 {
     public function store(Request $request, Task $task)
     {
+        if (auth()->user()->hasRole('employee')) {
+            abort_unless(auth()->user()->can('comment on task'), 403);
+        }
+
+        $isOwner = (int) $task->todoList?->user_id === (int) auth()->id();
+
+        $isAssignee = (int) $task->assigned_to === (int) auth()->id();
+
+        $isSuperAdmin = auth()->user()->hasRole('super_admin');
+
+        abort_unless($isOwner || $isAssignee || $isSuperAdmin, 403);
+
         $validated = $request->validate(
             [
                 'body' => ['required', 'string', 'max:2000'],
@@ -32,11 +45,25 @@ class CommentController extends Controller
             abort_unless($parentBelongsToTask, 422);
         }
 
-        $task->comments()->create([
+        $comment = $task->comments()->create([
             'user_id' => auth()->id(),
             'body' => $validated['body'],
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
+
+        $recipients = collect([
+            $task->assignedBy,
+            $task->assignedUser,
+        ])
+            ->filter()
+            ->unique('id')
+            ->reject(fn ($user) => $user->id === auth()->id());
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(
+                new TaskCommentNotification($task, $comment, auth()->user())
+            );
+        }
 
         return back()->with(
             'success',

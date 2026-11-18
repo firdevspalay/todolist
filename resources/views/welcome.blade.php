@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Staj To-Do List</title>
+    <title>TaskFlow</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -15,9 +16,22 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
         rel="stylesheet"
     >
+
+    <style>
+        body {
+            background: #f5f7fb;
+            color: #172033;
+            min-height: 100vh;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        @include('layouts.navigation')
+
+        
     @if (session('success'))
         <div
             id="success-toast"
@@ -57,451 +71,422 @@
         </script>
     @endif
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-7">
+   
 
-            {{-- Kullanıcı bilgisi --}}
-           <div class="d-flex justify-content-between align-items-center mb-3">
+<main class="lg:ml-64">
+    <div class="d-flex justify-content-between align-items-center bg-white border-bottom px-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+            <h5 class="fw-bold mb-0 text-dark">Dashboard</h5>
+            <button type="button"
+                    class="btn btn-sm rounded-3"
+                    style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe;"
+                    data-bs-toggle="modal"
+                    data-bs-target="#newListModal">
+                <i class="bi bi-plus-lg me-1"></i>
+                Yeni Liste
+            </button>
 
-    <span class="text-muted">
-        Hoş geldin,
-        <strong>{{ auth()->user()->name }}</strong>
-    </span>
-
-    <div class="d-flex align-items-center gap-2">
-        @if(auth()->user()->hasRole('manager'))
-            <a
-                href="{{ route('employees.index') }}"
-                class="btn btn-sm btn-primary"
-            >
-                Çalışan Yönetimi
+            <a href="{{ route('tasks.create') }}"
+            class="btn btn-sm rounded-3 text-white"
+            style="background:#4338ca; border:1px solid #4338ca;">
+                <span class="me-1 fw-bold">+</span>
+                Yeni Görev
             </a>
-        @endif
-
-        <div class="dropdown">
-
-            <button
-                class="btn btn-outline-secondary position-relative"
-                id="notificationBell"
-                data-bs-toggle="dropdown"
-            >
-                <i class="bi bi-bell"></i>
-
-                <span
-                    id="notificationCount"
-                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $notifications->count() ? '' : 'd-none' }}"
-                >
-                    {{ $notifications->count() }}
-                </span>
-
-            </button>
-
-            <ul
-                id="notificationDropdown"
-                class="dropdown-menu dropdown-menu-end"
-                style="width:min(320px, calc(100vw - 24px)); max-height:70vh; overflow-y:auto;"
-            >
-                @include('partials.notifications')
-
-            </ul>
-
         </div>
-        <a
-            href="{{ route('profile.edit') }}"
-            class="btn btn-outline-secondary"
-        >
-            <i class="bi bi-person me-1"></i>
-            Profil
-        </a>
 
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
+        <div class="d-flex align-items-center gap-3">
+            <div class="input-group" style="width: 280px;">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="bi bi-search text-secondary"></i>
+                </span>
+                <input type="text" id="taskSearch"
+                    class="form-control bg-light border-start-0"
+                    placeholder="Görevlerde ara..."
+                    aria-label="Görevlerde ara">
+            </div>
+        <div class="dropdown">
+            <button id="notificationBell"
+                    class="btn btn-light rounded-circle position-relative"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    aria-label="Bildirimler">
+                <i class="bi bi-bell fs-5"></i>
 
-            <button
-                type="submit"
-                class="btn btn-sm btn-outline-secondary"
-            >
-                <i class="bi bi-box-arrow-right me-1"></i>
-                Çıkış Yap
+                <span id="notificationCount"
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ auth()->user()->unreadNotifications()->count() == 0 ? 'd-none' : '' }}">
+                    {{ auth()->user()->unreadNotifications()->count() }}
+                </span>
             </button>
-        </form>
 
-    </div>
+            <div id="notificationDropdown"
+                class="dropdown-menu dropdown-menu-end shadow border-0 p-3"
+                style="width: 350px; max-width: 90vw; max-height: 400px; overflow-y: auto;">
+                <span class="text-muted">Bildirimler yükleniyor...</span>
+            </div>
+        </div>
+    <div class="d-flex align-items-center gap-2 border-start ps-3">
+        <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center"
+            style="width: 36px; height: 36px;">
+            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+        </div>
+                <span class="fw-semibold text-dark">
+                    {{ auth()->user()->name }}
+                </span>
+            </div>
+            </div>
+        </div>
 
-</div>
+        <div class="container-fluid px-4 px-lg-5 py-4">
+   <div class="row justify-content-center">
+    <div class="col-12 col-xl-10 col-xxl-9">
 
-            {{-- Başlık --}}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body text-center bg-primary text-white rounded">
-                    <h3 class="mb-0">
-                        <i class="bi bi-check2-square me-2"></i>
-                        Yapılacaklar Listesi
-                    </h3>
+
+            {{-- Dashboard Başlığı --}}
+            <div class="mb-4 p-4 rounded-4"
+                style="background: linear-gradient(120deg, #4338ca, #6366f1); color: white;">
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+                    <div>
+                        <p class="mb-2 opacity-75">TASKFLOW / DASHBOARD</p>
+
+                        <h2 class="fw-bold mb-2">
+                            Görev Yönetimi
+                        </h2>
+
+                        <p class="mb-0 opacity-75">
+                            Hoş geldin, {{ auth()->user()->name }}.
+                            Görevlerini tek bir yerden yönet.
+                        </p>
+                    </div>
                 </div>
             </div>
 
+
+            {{-- Dashboard İstatistikleri --}}
+                <div class="row g-3 mb-4">
+
+                    @php
+                        $statCards = [
+                            [
+                                'title' => 'Toplam Görev',
+                                'value' => $taskStats['total'],
+                                'icon' => 'bi-list-task',
+                                'color' => '#4f46e5',
+                                'bg' => '#eef2ff',
+                            ],
+                            [
+                                'title' => 'Devam Eden',
+                                'value' => $taskStats['in_progress'],
+                                'icon' => 'bi-arrow-repeat',
+                                'color' => '#d97706',
+                                'bg' => '#fffbeb',
+                            ],
+                            [
+                                'title' => 'Tamamlanan',
+                                'value' => $taskStats['completed'],
+                                'icon' => 'bi-check-circle',
+                                'color' => '#059669',
+                                'bg' => '#ecfdf5',
+                            ],
+                            [
+                                'title' => 'Geciken',
+                                'value' => $taskStats['overdue'],
+                                'icon' => 'bi-exclamation-triangle',
+                                'color' => '#dc2626',
+                                'bg' => '#fef2f2',
+                            ],
+                        ];
+                    @endphp
+
+                    @foreach($statCards as $card)
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card border-0 shadow-sm rounded-4 h-100"
+                                style="transition: transform .2s ease, box-shadow .2s ease;"
+                                onmouseenter="this.style.transform='translateY(-4px)'"
+                                onmouseleave="this.style.transform='translateY(0)'">
+
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start">
+
+                                        <div>
+                                            <p class="text-secondary small fw-medium mb-2">
+                                                {{ $card['title'] }}
+                                            </p>
+
+                                            <h2 class="fw-bold mb-0" style="color: {{ $card['color'] }}">
+                                                {{ $card['value'] }}
+                                            </h2>
+                                        </div>
+
+                                        <div class="d-flex align-items-center justify-content-center rounded-3"
+                                            style="width: 48px; height: 48px; background: {{ $card['bg'] }}; color: {{ $card['color'] }};">
+                                            <i class="bi {{ $card['icon'] }} fs-4"></i>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+
+                </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-lg-6 order-lg-2">   
+
+            {{-- Son Aktiviteler --}}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-clock-history me-2 text-primary"></i>
+                        Son Aktiviteler
+                    </h5>
+
+                    @forelse($recentActivities as $activity)
+                        <div class="d-flex align-items-start gap-3 py-2 border-bottom">
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2">
+                                <i class="bi bi-bell"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small fw-semibold">
+                                    @if(!empty($activity->data['task_id']))
+                                        <a href="{{ route('tasks.show', $activity->data['task_id']) }}"
+                                        class="text-decoration-none text-dark fw-semibold">
+                                            {{ $activity->data['message'] ?? $activity->data['title'] ?? 'Yeni bildirim' }}
+                                        </a>
+                                    @else
+                                        {{ $activity->data['message'] ?? $activity->data['title'] ?? 'Yeni bildirim' }}
+                                    @endif
+                                </div>
+                                <small class="text-muted">
+                                    {{ $activity->created_at->locale('tr')->diffForHumans() }}
+                                </small>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-muted small mb-0">
+                            Henüz aktivite bulunmuyor.
+                        </p>
+                    @endforelse
+                </div>
+            </div>
+
+                </div>
+                <div class="col-12 col-lg-6">
+    
+
             {{-- Bekleyen görev atamaları --}}
-            @if($assignedTasks->count())
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
-                        <h5 class="mb-3">
-                            <i class="bi bi-inbox me-2"></i>
+                        <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-inbox text-primary"></i>
                             Bana Atanan Görevler
+                            <span class="badge bg-primary-subtle text-primary rounded-pill ms-auto">
+                                {{ $assignedTasks->count() }}
+                            </span>
                         </h5>
 
+                    @if($assignedTasks->isEmpty())
+                        <div class="text-center py-4 px-3">
+                            <i class="bi bi-check-circle text-secondary fs-1"></i>
+                            <h6 class="fw-semibold mt-3">Bekleyen görev bulunmuyor</h6>
+                            <p class="text-secondary small mb-0">
+                                Şu anda yanıtlamanız gereken bir görev yok.
+                                Yeni bir görev atandığında burada görüntülenecek.
+                            </p>
+                        </div>
+                    @endif
                         @foreach($assignedTasks as $task)
-                            <div class="border rounded p-3 mb-3">
-                                <div class="fw-semibold mb-1">
-                                    <a
-                                        href="{{ route('tasks.show', $task) }}"
-                                        class="text-decoration-none text-dark"
-                                    >
-                                        {{ $task->title }}
-                                    </a>
+                            <div class="task-search-item border-0 border-start border-3 border-primary rounded-3 px-3 py-2 mb-2 bg-white shadow-sm">
+
+                                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+
+                                    <div class="flex-grow-1">
+                                        <a href="{{ route('tasks.show', $task) }}"
+                                        class="text-decoration-none text-dark fw-semibold">
+                                            <span class="task-title">{{ $task->title }}</span>
+                                        </a>
+
+                                        <div class="d-flex flex-wrap align-items-center gap-3 mt-1">
+                                            @if($task->due_date)
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar-event me-1"></i>
+                                                    {{ \Carbon\Carbon::parse($task->due_date)->format('d.m.Y') }}
+                                                </small>
+                                            @endif
+
+                                            @if($task->assignedBy)
+                                                <small class="text-primary">
+                                                    <i class="bi bi-person-fill me-1"></i>
+                                                    Atayan: {{ $task->assignedBy->name }}
+                                                </small>
+                                            @endif
+
+                                            @if($task->todoList)
+                                                <small class="text-secondary">
+                                                    <i class="bi bi-folder2-open me-1"></i>
+                                                    Liste: {{ $task->todoList->name }}
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <form action="{{ route('tasks.accept', $task->id) }}"
+                                            method="POST" class="m-0">
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="bi bi-check-lg me-1"></i>
+                                                Kabul Et
+                                            </button>
+                                        </form>
+
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="document.getElementById('reject-form-{{ $task->id }}').style.display = 'block'; this.style.display = 'none';">
+                                            <i class="bi bi-x-lg me-1"></i>
+                                            Reddet
+                                        </button>
+                                    </div>
                                 </div>
 
-                                @if($task->due_date)
-                                    <small class="text-muted d-block mb-1">
-                                        <i class="bi bi-calendar-event me-1"></i>
-                                        {{ \Carbon\Carbon::parse($task->due_date)->format('d.m.Y') }}
-                                    </small>
-                                @endif
+                                <form id="reject-form-{{ $task->id }}"
+                                    action="{{ route('tasks.reject', $task->id) }}"
+                                    method="POST"
+                                    class="mt-2"
+                                    style="display: none;">
+                                    @csrf
+                                    @method('PATCH')
 
-                                @if($task->assignedBy)
-                                    <small class="text-primary d-block">
-                                        <i class="bi bi-person-fill me-1"></i>
-                                        Atayan: {{ $task->assignedBy->name }}
-                                    </small>
-                                @endif
-
-                                @if($task->todoList)
-                                    <small class="text-secondary d-block mt-1">
-                                        <i class="bi bi-folder2-open me-1"></i>
-                                        Liste: {{ $task->todoList->name }}
-                                    </small>
-                                @endif
-
-                            <div class="mt-3">
-
-                                    <form
-                                        action="{{ route('tasks.accept', $task->id) }}"
-                                        method="POST"
-                                        class="mb-3"
-                                    >
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-success btn-sm"
-                                        >
-                                            <i class="bi bi-check-lg me-1"></i>
-                                            Kabul Et
-                                        </button>
-                                    </form>
-
-                                    <form
-                                        action="{{ route('tasks.reject', $task->id) }}"
-                                        method="POST"
-                                    >
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <textarea
-                                            name="rejection_note"
+                                    <textarea name="rejection_note"
                                             class="form-control mb-2"
                                             rows="2"
                                             placeholder="Reddetme nedeninizi yazın..."
                                             maxlength="300"
-                                            required
-                                        ></textarea>
-                                        <div class="text-end mt-1 mb-2">
-                                            <small class="text-muted rejection-counter">0/300</small>
-                                        </div>
+                                            required></textarea>
 
-                                        <button
-                                            type="submit"
-                                            class="btn btn-outline-danger btn-sm"
-                                        >
-                                            <i class="bi bi-x-lg me-1"></i>
-                                            Reddet
-                                        </button>
-                                    </form>
-                                </div>
+                                    <div class="text-end mt-1 mb-2">
+                                        <small class="text-muted rejection-counter">0/300</small>
+                                    </div>
+
+                                    <button type="button"
+                                            class="btn btn-light btn-sm me-2"
+                                            onclick="location.reload()">
+                                        Vazgeç
+                                    </button>
+
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-x-lg me-1"></i>
+                                        Reddet
+                                    </button>
+                                </form>
                             </div>
                         @endforeach
                     </div>
                 </div>
-            @endif
+        </div>
+    </div>
+   
+            {{-- Yeni Liste Modal --}}
+            <div class="modal fade" id="newListModal" tabindex="-1"
+                aria-labelledby="newListModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 rounded-4 shadow">
 
-            {{-- Kabul edilen görevler --}}
-           @if($acceptedTasks->count())
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-            <h5 class="mb-3">
-                <i class="bi bi-check2-circle me-2 text-success"></i>
-                Kabul Ettiğim Görevler
-            </h5>
-
-            @foreach($acceptedTasks as $task)
-                <div class="border rounded p-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start gap-3">
-
-                        <div class="flex-grow-1">
-                            @if($task->is_completed)
-                                <div class="fw-semibold mb-1 text-decoration-line-through text-muted">
-                                    <i class="bi bi-check-circle-fill text-success me-1"></i>
-
-                                    <a
-                                        href="{{ route('tasks.show', $task) }}"
-                                        class="text-decoration-none text-muted"
-                                    >
-                                        {{ $task->title }}
-                                    </a>
-                                </div>
-
-                                <small class="text-success d-block mb-1">
-                                    Tamamlandı
-                                </small>
-                            @else
-                                <div class="fw-semibold mb-1">
-                                    <a
-                                        href="{{ route('tasks.show', $task) }}"
-                                        class="text-decoration-none text-dark"
-                                    >
-                                        {{ $task->title }}
-                                    </a>
-                                </div>
-                            @endif
-
-                            @if($task->due_date)
-                                @php
-                                    $acceptedDueDate = \Carbon\Carbon::parse($task->due_date);
-                                    $acceptedDaysLeft = now()
-                                        ->startOfDay()
-                                        ->diffInDays($acceptedDueDate, false);
-                                @endphp
-
-                                @if($acceptedDaysLeft < 0)
-                                    <small class="text-danger d-block">
-                                        <i class="bi bi-calendar-x me-1"></i>
-                                        {{ $acceptedDueDate->format('d.m.Y') }}
-                                        • Termin geçti
-                                    </small>
-                                @elseif($acceptedDaysLeft <= 3)
-                                    <small class="text-warning d-block">
-                                        <i class="bi bi-calendar-event me-1"></i>
-                                        {{ $acceptedDueDate->format('d.m.Y') }}
-                                        • {{ $acceptedDaysLeft }} gün kaldı
-                                    </small>
-                                @else
-                                    <small class="text-success d-block">
-                                        <i class="bi bi-calendar-check me-1"></i>
-                                        {{ $acceptedDueDate->format('d.m.Y') }}
-                                        • {{ $acceptedDaysLeft }} gün kaldı
-                                    </small>
-                                @endif
-                            @endif
-
-                            @if($task->assignedBy)
-                                <small class="text-primary d-block mt-1">
-                                    <i class="bi bi-person-fill me-1"></i>
-                                    Atayan: {{ $task->assignedBy->name }}
-                                </small>
-                            @endif
-
-                            @if($task->todoList)
-                                <small class="text-secondary d-block mt-1">
-                                    <i class="bi bi-folder2-open me-1"></i>
-                                    Liste: {{ $task->todoList->name }}
-                                </small>
-                            @endif
+                        <div class="modal-header border-0 px-4 pt-4">
+                            <h5 class="modal-title fw-bold" id="newListModalLabel">
+                                <i class="bi bi-folder-plus text-primary me-2"></i>
+                                Yeni Liste Oluştur
+                            </h5>
+                            <button type="button" class="btn-close"
+                                    data-bs-dismiss="modal" aria-label="Kapat"></button>
                         </div>
-                        <div class="d-flex gap-2">
-                            @if(
-                                auth()->user()->can('edit task title')
-                                || auth()->user()->can('change due date')
-                            )
-                                <a
-                                    href="{{ route('tasks.edit', $task->id) }}"
-                                    class="btn btn-sm btn-outline-warning"
-                                    title="Görevi düzenle"
-                                >
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            @endif
 
-                        <form
-                            action="{{ route('tasks.toggle', $task->id) }}"
-                            method="POST"
-                        >
-                            @csrf
-                            @method('PATCH')
-
-                            <button
-                                type="submit"
-                                class="btn btn-sm {{ $task->is_completed ? 'btn-outline-secondary' : 'btn-outline-success' }}"
-                                title="{{ $task->is_completed ? 'Tamamlanmadı olarak işaretle' : 'Tamamlandı olarak işaretle' }}"
-                            >
-                                <i class="bi {{ $task->is_completed ? 'bi-arrow-counterclockwise' : 'bi-check-lg' }}"></i>
-                            </button>
-                        </form>
-                    </div>
-
-                    </div>
-                    @can('send feedback')
-                        <form
-                            action="{{ route('tasks.feedback', $task->id) }}"
-                            method="POST"
-                            class="mt-3"
-                        >
+                        <form action="{{ route('lists.store') }}" method="POST">
                             @csrf
 
-                            <div>
-                                <div class="input-group">
-                                    <textarea
-                                        name="feedback"
-                                        class="form-control feedback-textarea"
-                                        placeholder="Görev hakkında geri bildirim yazın..."
-                                        maxlength="300"
-                                        rows="2"
-                                        required
-                                    ></textarea>
+                            <div class="modal-body px-4">
+                                <label for="newListName" class="form-label fw-semibold">
+                                    Liste Adı
+                                </label>
+                                <input type="text" id="newListName" name="name"
+                                    class="form-control rounded-3"
+                                    placeholder="Liste adını girin..."
+                                    required>
+                            </div>
 
-                                    <button
-                                        type="submit"
-                                        class="btn btn-outline-primary"
-                                    >
-                                        <i class="bi bi-send me-1"></i>
-                                        Gönder
-                                    </button>
-                                </div>
-
-                                <div class="text-end mt-1">
-                                    <small class="text-muted feedback-counter">0/300</small>
-                                </div>
+                            <div class="modal-footer border-0 px-4 pb-4">
+                                <button type="button" class="btn btn-light"
+                                        data-bs-dismiss="modal">Vazgeç</button>
+                                <button type="submit" class="btn text-white"
+                                    style="background:#4338ca; border:1px solid #4338ca;">
+                                    <i class="bi bi-plus-lg me-1"></i>
+                                    Liste Oluştur
+                                </button>
                             </div>
                         </form>
-                    @endcan
-                </div>
-            @endforeach
-        </div>
-    </div>
-@endif
-@if($rejectedTasks->count())
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
 
-            <h5 class="mb-3">
-                <i class="bi bi-x-circle me-2 text-danger"></i>
-                Reddettiğim Görevler
-            </h5>
-
-            @foreach($rejectedTasks as $task)
-
-                <div class="border rounded p-3 mb-3">
-
-                    <div class="fw-semibold mb-1">
-                        <a
-                            href="{{ route('tasks.show', $task) }}"
-                            class="text-decoration-none text-dark"
-                        >
-                            {{ $task->title }}
-                        </a>
                     </div>
-
-                    @if($task->due_date)
-                        <small class="text-muted d-block">
-                            <i class="bi bi-calendar-event me-1"></i>
-                            {{ \Carbon\Carbon::parse($task->due_date)->format('d.m.Y') }}
-                        </small>
-                    @endif
-
-                    @if($task->assignedBy)
-                        <small class="text-primary d-block mt-1">
-                            <i class="bi bi-person-fill me-1"></i>
-                            Atayan: {{ $task->assignedBy->name }}
-                        </small>
-                    @endif
-
-                    @if($task->todoList)
-                        <small class="text-secondary d-block mt-1">
-                            <i class="bi bi-folder2-open me-1"></i>
-                            Liste: {{ $task->todoList->name }}
-                        </small>
-                    @endif
-
-                    <small class="text-danger d-block mt-2">
-                        <i class="bi bi-x-circle-fill me-1"></i>
-                        Bu görevi reddettiniz.
-                    </small>
-
-                </div>
-
-            @endforeach
-
-        </div>
-    </div>
-@endif
-
-            {{-- Yeni liste oluşturma --}}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body">
-                    <h5 class="mb-3">Yeni Liste Oluştur</h5>
-
-                    <form action="{{ route('lists.store') }}" method="POST">
-                        @csrf
-
-                        <div class="input-group">
-                            <input
-                                type="text"
-                                name="name"
-                                class="form-control"
-                                placeholder="Liste adı..."
-                                required
-                            >
-
-                            <button
-                                type="submit"
-                                class="btn btn-success"
-                            >
-                                <i class="bi bi-folder-plus me-1"></i>
-                                Oluştur
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
 
             {{-- Kullanıcının listeleri --}}
             @if($todoLists->count())
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body">
-                        <h5 class="mb-3">Listelerim</h5>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h4 class="fw-bold mb-1">Listelerim</h4>
+                            <p class="text-secondary mb-0 small">
+                                Görevlerini listelerine göre takip et.
+                            </p>
+                        </div>
 
-                        @foreach($todoLists as $list)
-                            <div class="card mb-3">
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                            {{ $todoLists->count() }} Liste
+                        </span>
+                    </div>
 
-                                {{-- Liste başlığı --}}
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <div class="fw-bold">
-                                        <i class="bi bi-folder2-open me-2"></i>
-                                        {{ $list->name }}
+                    @foreach($todoLists as $list)
+                        {{-- Liste kartı --}}
+                        <div id="list-{{ $list->id }}" class="card border-0 shadow-sm mb-3 overflow-hidden rounded-4">
+
+                            {{-- Liste başlığı --}}
+                            <div class="card-header bg-white border-bottom py-3 px-4">
+                                <div class="d-flex justify-content-between align-items-center">
+
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="d-flex align-items-center justify-content-center bg-primary-subtle rounded-3"
+                                            style="width: 42px; height: 42px;">
+                                            <i class="bi bi-folder2 text-primary fs-4"></i>
+                                        </div>
+
+                                        <div>
+                                            <h5 class="fw-bold mb-0">
+                                                {{ $list->name }}
+                                            </h5>
+
+                                            <small class="text-muted fw-medium">
+                                                {{ $list->tasks->count() }} görev
+                                            </small>
+                                        </div>
                                     </div>
 
                                     <div class="dropdown">
                                         <button
-                                            class="btn btn-sm btn-light border-0"
+                                            class="btn btn-light border-0 rounded-circle"
                                             type="button"
                                             data-bs-toggle="dropdown"
                                             aria-expanded="false"
                                             aria-label="Liste işlemleri"
                                         >
-                                            <i class="bi bi-three-dots-vertical"></i>
+                                            <i class="bi bi-three-dots"></i>
                                         </button>
 
-                                        <ul id="notificationDropdown" class="dropdown-menu dropdown-menu-end">
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                             <li>
                                                 <a
                                                     class="dropdown-item"
@@ -511,6 +496,8 @@
                                                     Düzenle
                                                 </a>
                                             </li>
+
+                                            <li><hr class="dropdown-divider"></li>
 
                                             <li>
                                                 <form
@@ -533,101 +520,133 @@
                                         </ul>
                                     </div>
                                 </div>
+                            </div>
 
-                                {{-- Görevler --}}
-                                <ul class="list-group list-group-flush">
-                                    @forelse($list->tasks as $task)
-                                        <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                            {{-- Görevler --}}
+                            <div class="card-body p-0">
+                                @php
+                                    $perPage = 5;
+                                    $currentPage = max(1, (int) request()->query('page_' . $list->id, 1));
+                                    $totalPages = max(1, (int) ceil($list->tasks->count() / $perPage));
+                                    $currentPage = min($currentPage, $totalPages);
 
-                                            <div class="flex-grow-1">
+                                    $visibleTasks = $list->tasks->slice(
+                                        ($currentPage - 1) * $perPage,
+                                        $perPage
+                                    );
+                                @endphp
 
-                                                {{-- Görev adı --}}
-                                               @if($task->is_completed)
-                                                    <div class="text-decoration-line-through text-muted text-break">
-                                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                @forelse($visibleTasks as $task)
 
-                                                        <a
-                                                            href="{{ route('tasks.show', $task) }}"
-                                                            class="text-muted text-decoration-none"
-                                                        >
-                                                            {{ $task->title }}
-                                                        </a>
-                                                    </div>
-                                               @else
-                                                    <div class="text-break">
-                                                        <i class="bi bi-circle text-muted me-2"></i>
+                                    <div class="px-4 py-3 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-start gap-3">
 
-                                                        <a
-                                                            href="{{ route('tasks.show', $task) }}"
-                                                            class="text-dark text-decoration-none"
-                                                        >
-                                                            {{ $task->title }}
-                                                        </a>
-                                                    </div>
-                                                @endif
+                                            <div class="d-flex gap-3 flex-grow-1">
 
-                                                {{-- Termin tarihi --}}
-                                                @if($task->due_date)
-                                                    @php
-                                                        $dueDate = \Carbon\Carbon::parse($task->due_date);
-                                                        $daysLeft = now()
-                                                            ->startOfDay()
-                                                            ->diffInDays($dueDate, false);
-                                                    @endphp
-
-                                                    @if($daysLeft < 0)
-                                                        <small class="text-danger ms-4">
-                                                            <i class="bi bi-calendar-x me-1"></i>
-                                                            {{ $dueDate->format('d.m.Y') }}
-                                                            • Termin geçti
-                                                        </small>
-                                                    @elseif($daysLeft <= 3)
-                                                        <small class="text-warning ms-4">
-                                                            <i class="bi bi-calendar-event me-1"></i>
-                                                            {{ $dueDate->format('d.m.Y') }}
-                                                            • {{ $daysLeft }} gün kaldı
-                                                        </small>
+                                                <div class="pt-1">
+                                                    @if($task->is_completed)
+                                                        <i class="bi bi-check-circle-fill text-success fs-5"></i>
                                                     @else
-                                                        <small class="text-success ms-4">
-                                                            <i class="bi bi-calendar-check me-1"></i>
-                                                            {{ $dueDate->format('d.m.Y') }}
-                                                            • {{ $daysLeft }} gün kaldı
-                                                        </small>
+                                                        <i class="bi bi-circle text-secondary fs-5"></i>
                                                     @endif
-                                                @endif
+                                                </div>
 
-                                                {{-- Atanan kişi --}}
-                                                @if($task->assignedUser)
-                                                    <br>
+                                                <div class="flex-grow-1">
 
-                                                    <small class="text-primary ms-4">
-                                                        <i class="bi bi-person-fill me-1"></i>
-                                                        Atanan: {{ $task->assignedUser->name }}
-                                                    </small>
-                                                @endif
-                                                @if($task->assignment_status === 'pending')
-                                                     <br>
-                                                    <small class="text-warning ms-4">
-                                                          <i class="bi bi-hourglass-split me-1"></i>
-                                                 Yanıt bekleniyor
-                                                      </small>
-                                                @elseif($task->assignment_status === 'accepted')
-                                                    <br>
-                                                    <small class="text-success ms-4">
-                                                        <i class="bi bi-check-circle me-1"></i>
-                                                        Kabul edildi
-                                                    </small>
-                                                @elseif($task->assignment_status === 'rejected')
-                                                    <br>
-                                                    <small class="text-danger ms-4">
-                                                        <i class="bi bi-x-circle me-1"></i>
-                                                 Reddedildi
-                                                    </small>
-                                                @endif
+                                                    {{-- Görev adı --}}
+                                                    <a
+                                                        href="{{ route('tasks.show', $task) }}"
+                                                        class="text-decoration-none {{ $task->is_completed ? 'text-secondary text-decoration-line-through' : 'text-dark' }}"
+                                                    >
+                                                        <span class="fw-semibold">
+                                                            {{ $task->title }}
+                                                        </span>
+                                                    </a>
+
+                                                    <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+
+                                                        {{-- Termin tarihi --}}
+                                                        @if($task->due_date)
+                                                            @php
+                                                                $dueDate = \Carbon\Carbon::parse($task->due_date);
+                                                                $daysLeft = now()
+                                                                    ->startOfDay()
+                                                                    ->diffInDays($dueDate, false);
+                                                            @endphp
+
+                                                            @if($daysLeft < 0)
+                                                                <small class="text-danger">
+                                                                    <i class="bi bi-calendar-x me-1"></i>
+                                                                    {{ $dueDate->format('d.m.Y') }}
+                                                                    · Termin geçti
+                                                                </small>
+                                                            @elseif($daysLeft <= 3)
+                                                                <small class="text-warning">
+                                                                    <i class="bi bi-calendar-event me-1"></i>
+                                                                    {{ $dueDate->format('d.m.Y') }}
+                                                                    · {{ $daysLeft }} gün kaldı
+                                                                </small>
+                                                            @else
+                                                                <small class="text-secondary">
+                                                                    <i class="bi bi-calendar-check me-1"></i>
+                                                                    {{ $dueDate->format('d.m.Y') }}
+                                                                    · {{ $daysLeft }} gün kaldı
+                                                                </small>
+                                                            @endif
+                                                        @endif
+
+                                                        {{-- Atanan kişi --}}
+                                                        @if($task->assignedUser)
+                                                            <small class="text-secondary">
+                                                                <i class="bi bi-person me-1"></i>
+                                                                {{ $task->assignedUser->name }}
+                                                            </small>
+                                                        @endif
+
+                                                        {{-- Atama durumu --}}
+                                                        @if($task->assigned_to && $task->assignment_status === 'pending')
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">
+                                                                Yanıt bekleniyor
+                                                            </span>
+                                                        @elseif($task->assigned_to && $task->assignment_status === 'accepted')
+                                                            <span class="badge bg-success-subtle text-success-emphasis rounded-pill">
+                                                                Kabul edildi
+                                                            </span>
+                                                        @elseif($task->assigned_to && $task->assignment_status === 'rejected')
+                                                            <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">
+                                                                Reddedildi
+                                                            </span>
+                                                        @endif
+                                                        <form action="{{ route('tasks.status', $task) }}" method="POST" class="mt-2">
+                                                            @csrf
+                                                            @method('PATCH')
+
+                                                            <select name="status"
+                                                                    class="form-select form-select-sm"
+                                                                    onchange="this.form.submit()">
+                                                                @foreach([
+                                                                    'Yeni',
+                                                                    'Planlama Bekleniyor',
+                                                                    'İçerik Bekleniyor',
+                                                                    'Cevap Bekliyor',
+                                                                    'İşlem Görüyor',
+                                                                    'Çözüldü',
+                                                                    'Tamamlandı'
+                                                                ] as $status)
+                                                                    <option value="{{ $status }}" {{ $task->status === $status ? 'selected' : '' }}>
+                                                                        {{ $status }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </form>
+
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {{-- Görev butonları --}}
-                                            <div class="d-flex flex-shrink-0 gap-1">
+                                            <div class="d-flex flex-shrink-0 gap-2">
+
                                                 <form
                                                     action="{{ route('tasks.toggle', $task->id) }}"
                                                     method="POST"
@@ -637,7 +656,7 @@
 
                                                     <button
                                                         type="submit"
-                                                        class="btn btn-sm {{ $task->is_completed ? 'btn-outline-secondary' : 'btn-outline-success' }}"
+                                                        class="btn btn-sm btn-light border"
                                                         title="{{ $task->is_completed ? 'Tamamlanmadı olarak işaretle' : 'Görevi tamamla' }}"
                                                     >
                                                         <i class="bi {{ $task->is_completed ? 'bi-arrow-counterclockwise' : 'bi-check-lg' }}"></i>
@@ -647,9 +666,9 @@
                                                 @if(!$task->is_completed)
                                                     <a
                                                         href="{{ route('tasks.edit', $task->id) }}"
-                                                        class="btn btn-sm btn-outline-warning"
+                                                        class="btn btn-sm btn-light border"
                                                         title="Görevi düzenle"
-                                                        >
+                                                    >
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 @endif
@@ -664,119 +683,47 @@
 
                                                     <button
                                                         type="submit"
-                                                        class="btn btn-sm btn-outline-danger"
+                                                        class="btn btn-sm btn-light border text-danger"
                                                         title="Görevi sil"
                                                     >
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>
+
                                             </div>
-                                        </li>
+                                        </div>
+                                    </div>
 
-                                    @empty
-                                        <li class="list-group-item text-muted">
-                                            Henüz görev yok.
-                                        </li>
-                                    @endforelse
-                                </ul>
-
+                                @empty
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-inbox text-secondary fs-3"></i>
+                                        <p class="text-secondary mb-0 mt-2">
+                                            Bu listede henüz görev yok.
+                                        </p>
+                                    </div>
+                                @endforelse
+                                @if($totalPages > 1)
+                                    <div class="d-flex justify-content-center align-items-center gap-2 py-3">
+                                        @for($page = 1; $page <= $totalPages; $page++)
+                                            <a href="{{ request()->fullUrlWithQuery(['page_' . $list->id => $page]) }}#list-{{ $list->id }}"
+                                            class="btn btn-sm {{ $currentPage == $page ? 'text-white' : 'btn-outline-secondary' }}"
+                                            style="{{ $currentPage == $page ? 'background:#4f46e5; border-color:#4f46e5;' : '' }}">
+                                                {{ $page }}
+                                            </a>
+                                        @endfor
+                                    </div>
+                                @endif
                             </div>
-                        @endforeach
-                    </div>
+
+                        </div>
+                    @endforeach
                 </div>
             @endif
-
-            {{-- Yeni görev oluşturma --}}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body">
-                    <h5 class="mb-3">Yeni Görev Oluştur</h5>
-
-                    <form action="{{ route('tasks.store') }}" method="POST">
-                        @csrf
-
-                        <div class="mb-3">
-                            <label for="todo_list_id" class="form-label">
-                                Liste
-                            </label>
-
-                            <select
-                                id="todo_list_id"
-                                name="todo_list_id"
-                                class="form-select"
-                                required
-                            >
-                                <option value="">Liste seçin...</option>
-
-                                @foreach($todoLists as $list)
-                                    <option value="{{ $list->id }}">
-                                        {{ $list->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="title" class="form-label">
-                                Görev
-                            </label>
-
-                            <input
-                                id="title"
-                                type="text"
-                                name="title"
-                                class="form-control"
-                                placeholder="Yeni bir görev yazın..."
-                                required
-                            >
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="due_date" class="form-label">
-                                Termin Tarihi
-                            </label>
-
-                            <input
-                                id="due_date"
-                                type="date"
-                                name="due_date"
-                                class="form-control"
-                            >
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="assigned_to" class="form-label">
-                                Atanacak Kişi
-                            </label>
-
-                            <select
-                                id="assigned_to"
-                                name="assigned_to"
-                                class="form-select"
-                            >
-                                <option value="">Kimse</option>
-
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}">
-                                        {{ $user->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <button
-                            type="submit"
-                            class="btn btn-primary w-100"
-                        >
-                            <i class="bi bi-plus-circle me-1"></i>
-                            Görev Ekle
-                        </button>
-                    </form>
-                </div>
-            </div>
-
         </div>
     </div>
 </div>
+
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -930,5 +877,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const parentTaskSelect = document.getElementById('parent_task_id');
+    const assignedToArea = document.getElementById('assignedToArea');
+    const assignedToSelect = document.getElementById('assigned_to');
+
+    if (!parentTaskSelect || !assignedToArea || !assignedToSelect) return;
+
+    function updateAssignedTo() {
+        if (parentTaskSelect.value) {
+            assignedToArea.style.display = 'none';
+            assignedToSelect.value = '';
+        } else {
+            assignedToArea.style.display = '';
+        }
+    }
+
+    parentTaskSelect.addEventListener('change', updateAssignedTo);
+    updateAssignedTo();
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('taskSearch');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function () {
+        const search = this.value.toLocaleLowerCase('tr-TR').trim();
+
+        document.querySelectorAll('.task-search-item').forEach(function (card) {
+            const text = (card.querySelector('.task-title')?.textContent || '').toLocaleLowerCase('tr-TR');
+            card.style.display = text.includes(search) ? '' : 'none';
+        });
+    });
+});
+</script>
+
+
 </body> 
 </html>

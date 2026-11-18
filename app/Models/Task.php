@@ -16,6 +16,8 @@ class Task extends Model
         'assigned_to',
         'assigned_by',
         'assignment_status',
+        'status',
+        'parent_task_id',
     ];
 
     public function todoList()
@@ -38,5 +40,15 @@ class Task extends Model
         return $this->hasMany(Comment::class)
             ->whereNull('parent_id')
             ->latest();
+    }
+
+    public function parentTask()
+    {
+        return $this->belongsTo(Task::class, 'parent_task_id');
+    }
+
+    public function subtasks()
+    {
+        return $this->hasMany(Task::class, 'parent_task_id');
     }
 }
